@@ -91,7 +91,7 @@ public class NTRIPClient {
 				log.info("end of stream detected");
 				break;
 			}
-			log.info("read {} bytes and writing to {}",nbytes,gnssOut);
+			log.info("read {} bytes",nbytes);
 			
 			byte[] packet = new byte[nbytes];
 			System.arraycopy(buf, 0, packet, 0, nbytes);
@@ -104,7 +104,9 @@ public class NTRIPClient {
 	}
 	
 	public void sendGGA (String gga) throws IOException {
+		log.info("received GGA to send to NTRIP server: {}",gga);
 		ntripServerOut.write((gga + "\r\n").getBytes());
+		ntripServerOut.flush();
 	}
 	
 	private String makeNtripRequest() {
