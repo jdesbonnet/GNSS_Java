@@ -7,13 +7,16 @@ import java.net.Socket;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 
 //import lombok.extern.slf4j.Slf4j;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-public class NTRIP {
+public class NTRIPClient {
 
+	private static final String USER_AGENT = "ie.strix.gnss.ntrip.NTRIPClient/0.1.0";
+	
 	/**
 	 * Network TCP socket to NTRIP service.
 	 */
@@ -21,12 +24,14 @@ public class NTRIP {
 
 	private String host;
 	private String port;
-	private String auth;
+	private String username;
+	private String password;
 
-	public NTRIP(String host, String port, String auth) {
+	public NTRIPClient(String host, String port, String username, String password) {
 		this.host = host;
 		this.port = port;
-		this.auth = auth;
+		this.username = username;
+		this.password = password;
 	}
 
 	/**
@@ -61,9 +66,22 @@ public class NTRIP {
 			InputStream in = ntripSocket.getInputStream();
 			OutputStream out = ntripSocket.getOutputStream();
 
+			// Combine username and password with a colon
+			String authString = username + ":" + password;
+
+			// Encode the combined string with Base64
+			String encodedAuth = Base64.getEncoder().encodeToString(authString.getBytes(StandardCharsets.UTF_8));
+
+			// Construct the header
+			String authHeader = "Basic " + encodedAuth;
+
 			String request = "GET /NEAR-RTCM HTTP/1.1\r\n" + "Host: " + host + ":" + port + "\r\n"
-					+ "User-Agent: ie.strix.gnss.ntrip.NTRIPClient/0.1.0\r\n" + "Authorization: " + auth + "\r\n"
-					+ "Ntrip-Version: Ntrip/2.0\r\n" + "Accept: */*\r\n" + "Connection: close\r\n\r\n";
+					+ "User-Agent: " + USER_AGENT + "\r\n" 
+					+ "Authorization: " + authHeader + "\r\n"
+					+ "Ntrip-Version: Ntrip/2.0\r\n" 
+					+ "Accept: */*\r\n" 
+					+ "Connection: close\r\n\r\n";
+			log.info("NTRIP request: {}", request);
 			out.write(request.getBytes(StandardCharsets.UTF_8));
 			out.flush();
 
