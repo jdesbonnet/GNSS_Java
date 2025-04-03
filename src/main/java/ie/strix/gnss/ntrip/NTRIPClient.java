@@ -25,6 +25,9 @@ public class NTRIPClient {
 	
 	private OutputStream writeTo;
 
+	private InputStream ntripServerIn;
+	private OutputStream ntripServerOut;
+	
 	public NTRIPClient(String host, Integer port, String username, String password) {
 		this.host = host;
 		this.port = port;
@@ -35,29 +38,34 @@ public class NTRIPClient {
 	public void setOutputStream (OutputStream out) {
 		this.writeTo = out;
 	}
+	public OutputStream getNtripServerOut() {
+		return ntripServerOut;
+	}
 
 	public void connect() throws UnknownHostException, IOException {
 		
 		log.info("opening TCP socket to {}:{}", host,port);
 		Socket socket = new Socket(host, port);
+		log.info("socket opened");
 		
-		InputStream sin = socket.getInputStream();
-		OutputStream sout = socket.getOutputStream();
+		ntripServerIn = socket.getInputStream();
+		ntripServerOut = socket.getOutputStream();
 		
+		log.info("making NTRIP request");
 		String req = makeNtripRequest();
 		log.info("request={}",req);
-		sout.write(req.getBytes());
-		sout.flush();
+		ntripServerOut.write(req.getBytes());
+		ntripServerOut.flush();
 		
 		
 		String gga = "$GNGGA,160656.50,5316.95450720,N,00858.95182605,W,1,24,0.6,28.8719,M,57.9852,M,,*56\r\n";
 		log.info("writing GGA");
-		sout.write(gga.getBytes());
+		ntripServerOut.write(gga.getBytes());
 		
 		byte[] buf = new byte[2048];
 		while (true) {
-			final int nbytes = sin.read(buf);
-			log.info("read {} bytes",nbytes);
+			final int nbytes = ntripServerIn.read(buf);
+			log.info("read {} bytes and writing to {}",nbytes,writeTo);
 			//log.info(new String(buf));
 			writeTo.write(buf,0,nbytes);
 		}
