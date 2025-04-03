@@ -4,11 +4,11 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
+import java.util.concurrent.Flow;
+import java.util.concurrent.SubmissionPublisher;
 
 //import lombok.extern.slf4j.Slf4j;
 import lombok.extern.slf4j.Slf4j;
@@ -27,6 +27,9 @@ public class NTRIPClient {
 
 	private InputStream ntripServerIn;
 	private OutputStream ntripServerOut;
+	
+	private final SubmissionPublisher<byte[]> publisher = new SubmissionPublisher<>();
+
 	
 	public NTRIPClient(String host, Integer port, String username, String password) {
 		this.host = host;
@@ -58,6 +61,24 @@ public class NTRIPClient {
 		ntripServerOut.write(req.getBytes());
 		ntripServerOut.flush();
 		
+		// Before passing binary RTCM messages to GNSS module, first read past the NTRIP
+		// response header
+		// which is terminated by two end-of-lines CR LF CR LF. We won't bother parsing
+		// any of this
+		// for the moment.
+		int endOfHeader = 0;
+		int n = 0;
+		while (endOfHeader != 0x0d0a0d0a) {
+			int c = ntripServerIn.read() & 0xff;
+			endOfHeader <<= 8;
+			endOfHeader |= c;
+			n++;
+			// log.info("reading NTRIP header byte: " + (char)c + " endOfHeader=" +
+			// String.format("%08x",endOfHeader));
+		}
+		log.info("end of NTRIP response header found");
+		
+		
 		
 		String gga = "$GNGGA,160656.50,5316.95450720,N,00858.95182605,W,1,24,0.6,28.8719,M,57.9852,M,,*56\r\n";
 		log.info("writing GGA");
@@ -71,14 +92,16 @@ public class NTRIPClient {
 				break;
 			}
 			log.info("read {} bytes and writing to {}",nbytes,gnssOut);
-			//log.info(new String(buf));
-			if (gnssOut != null) {
-				gnssOut.write(buf,0,nbytes);
+			
+			byte[] packet = new byte[nbytes];
+			System.arraycopy(buf, 0, packet, 0, nbytes);
+			int s = publisher.submit(packet);
+			if (s > 10) {
+				log.warn("message build up s={}",s);
 			}
+			
 		}
 	}
-	
-	
 	
 	
 	private String makeNtripRequest() {
@@ -102,103 +125,11 @@ public class NTRIPClient {
 		return request;
 	}
 	
-	
 	/**
-	 * Open NTRIP connection and read corrections message and forward to to GNSS
-	 * device.
+	 * Allows callers to subscribe to RTCM message stream. 
 	 */
-	private class NTRIPReader implements Runnable {
-
-		private Socket ntripSocket;
-
-		private long disconnectTime = 0;
-
-		public NTRIPReader(Socket socket) {
-			this.ntripSocket = socket;
-		}
-
-		public void run() {
-			try {
-				readLoop();
-			} catch (IOException e) {
-				log.error("NTRIP corrections stream read loop: ", e);
-			}
-		}
-
-		public void setDisconnectTime(long t) {
-			this.disconnectTime = t;
-		}
-
-		private void readLoop() throws IOException {
-			log.info("readLoop()");
-
-			InputStream in = ntripSocket.getInputStream();
-			OutputStream out = ntripSocket.getOutputStream();
-
-			// Combine username and password with a colon
-			String authString = username + ":" + password;
-
-			// Encode the combined string with Base64
-			String encodedAuth = Base64.getEncoder().encodeToString(authString.getBytes(StandardCharsets.UTF_8));
-
-			// Construct the header
-			String authHeader = "Basic " + encodedAuth;
-
-			String request = "GET /NEAR-RTCM HTTP/1.1\r\n" + "Host: " + host + ":" + port + "\r\n"
-					+ "User-Agent: " + USER_AGENT + "\r\n" 
-					+ "Authorization: " + authHeader + "\r\n"
-					+ "Ntrip-Version: Ntrip/2.0\r\n" 
-					+ "Accept: */*\r\n" 
-					+ "Connection: close\r\n\r\n";
-			log.info("NTRIP request: {}", request);
-			out.write(request.getBytes(StandardCharsets.UTF_8));
-			out.flush();
-
-			// Before passing binary RTCM messages to GNSS module, first read past the NTRIP
-			// response header
-			// which is terminated by two end-of-lines CR LF CR LF. We won't bother parsing
-			// any of this
-			// for the moment.
-			int endOfHeader = 0;
-			int n = 0;
-			while (endOfHeader != 0x0d0a0d0a) {
-				int c = in.read() & 0xff;
-				endOfHeader <<= 8;
-				endOfHeader |= c;
-				n++;
-				// log.info("reading NTRIP header byte: " + (char)c + " endOfHeader=" +
-				// String.format("%08x",endOfHeader));
-			}
-			log.info("end of NTRIP response header found");
-
-			byte[] buf = new byte[1024];
-			int nbytes;
-			while ((nbytes = in.read(buf)) >= 0) {
-				log.info("read " + nbytes + " from NTRIP stream");
-
-				StringBuilder sb = new StringBuilder();
-				int sumbytes = 0;
-				for (int i = 0; i < nbytes; i++) {
-					sb.append(" " + String.format("%02x", buf[i]));
-					sumbytes += buf[i];
-				}
-				log.info(sb.toString() + " sum=" + sumbytes);
-
-				/*
-				 * if (outToGnssDevice != null) { outToGnssDevice.write(buf,0,nbytes);
-				 * outToGnssDevice.flush(); log.info("writing " + nbytes +
-				 * " from NTRIP stream to GNSS module"); //mCurrentUpdate.correctionBytesWritten
-				 * += nbytes; }
-				 */
-
-				if (disconnectTime > 0 && System.currentTimeMillis() >= disconnectTime) {
-					log.info("NTRIP read stream disconnect time reached");
-					ntripSocket.close();
-					break;
-				}
-
-			}
-			log.info("NTRIP read stream terminated");
-		}
+	public void subscribe(Flow.Subscriber<? super byte[]> subscriber) {
+		publisher.subscribe(subscriber);
 	}
+	
 }
