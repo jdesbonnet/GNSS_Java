@@ -103,6 +103,9 @@ public class NTRIPClient {
 		}
 	}
 	
+	public void sendGGA (String gga) throws IOException {
+		ntripServerOut.write((gga + "\r\n").getBytes());
+	}
 	
 	private String makeNtripRequest() {
 		
