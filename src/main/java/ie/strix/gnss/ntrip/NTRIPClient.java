@@ -76,12 +76,12 @@ public class NTRIPClient {
 			// log.info("reading NTRIP header byte: " + (char)c + " endOfHeader=" +
 			// String.format("%08x",endOfHeader));
 		}
-		log.info("end of NTRIP response header found");
+		log.info("end of NTRIP response header found after reading {} bytes",n);
 		
 		
 		
 		String gga = "$GNGGA,160656.50,5316.95450720,N,00858.95182605,W,1,24,0.6,28.8719,M,57.9852,M,,*56\r\n";
-		log.info("writing GGA");
+		log.info("writing initial GGA");
 		ntripServerOut.write(gga.getBytes());
 		
 		byte[] buf = new byte[2048];
@@ -91,10 +91,12 @@ public class NTRIPClient {
 				log.info("end of stream detected");
 				break;
 			}
-			log.info("read {} bytes",nbytes);
+			log.info("read packet {} bytes",nbytes);
 			
 			byte[] packet = new byte[nbytes];
 			System.arraycopy(buf, 0, packet, 0, nbytes);
+			log.info(byteArrayToHex(packet));
+			
 			int s = publisher.submit(packet);
 			if (s > 10) {
 				log.warn("message build up s={}",s);
@@ -130,6 +132,7 @@ public class NTRIPClient {
 		return request;
 	}
 	
+	
 	/**
 	 * Allows callers to subscribe to RTCM message stream. 
 	 */
@@ -137,4 +140,16 @@ public class NTRIPClient {
 		publisher.subscribe(subscriber);
 	}
 	
+	
+	
+	private static String byteArrayToHex (byte[] buf, int offset, int len) {
+		StringBuilder s = new StringBuilder();
+		for (int i = offset; i < (offset+len); i++) {
+			s.append(String.format(" %02X", buf[i]));
+		}
+		return s.toString();
+	}
+	private static String byteArrayToHex (byte[] buf) {
+		return byteArrayToHex(buf,0,buf.length);
+	}
 }
