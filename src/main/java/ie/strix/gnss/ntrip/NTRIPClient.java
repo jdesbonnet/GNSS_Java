@@ -67,7 +67,9 @@ public class NTRIPClient {
 			final int nbytes = ntripServerIn.read(buf);
 			log.info("read {} bytes and writing to {}",nbytes,writeTo);
 			//log.info(new String(buf));
-			writeTo.write(buf,0,nbytes);
+			if (writeTo != null) {
+				writeTo.write(buf,0,nbytes);
+			}
 		}
 	}
 	
