@@ -23,7 +23,7 @@ public class NTRIPClient {
 	private String username;
 	private String password;
 	
-	private OutputStream writeTo;
+	private OutputStream gnssOut;
 
 	private InputStream ntripServerIn;
 	private OutputStream ntripServerOut;
@@ -36,7 +36,8 @@ public class NTRIPClient {
 	}
 	
 	public void setOutputStream (OutputStream out) {
-		this.writeTo = out;
+		log.info("setting GNSS config/RTCM stream to {}",out);
+		this.gnssOut = out;
 	}
 	public OutputStream getNtripServerOut() {
 		return ntripServerOut;
@@ -65,10 +66,14 @@ public class NTRIPClient {
 		byte[] buf = new byte[2048];
 		while (true) {
 			final int nbytes = ntripServerIn.read(buf);
-			log.info("read {} bytes and writing to {}",nbytes,writeTo);
+			if (nbytes<0) {
+				log.info("end of stream detected");
+				break;
+			}
+			log.info("read {} bytes and writing to {}",nbytes,gnssOut);
 			//log.info(new String(buf));
-			if (writeTo != null) {
-				writeTo.write(buf,0,nbytes);
+			if (gnssOut != null) {
+				gnssOut.write(buf,0,nbytes);
 			}
 		}
 	}
