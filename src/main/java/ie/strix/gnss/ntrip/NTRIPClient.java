@@ -91,11 +91,13 @@ public class NTRIPClient {
 				log.info("end of stream detected");
 				break;
 			}
-			log.info("read packet {} bytes",nbytes);
 			
 			byte[] packet = new byte[nbytes];
 			System.arraycopy(buf, 0, packet, 0, nbytes);
-			log.info(byteArrayToHex(packet));
+			int checksum = checksum(packet);
+			log.info("read packet {} bytes checksum={}",nbytes,checksum);
+
+			log.debug(byteArrayToHex(packet));
 			
 			int s = publisher.submit(packet);
 			if (s > 10) {
@@ -141,7 +143,19 @@ public class NTRIPClient {
 	}
 	
 	
-	
+	/**
+	 * Calculate checksum by XOR all bytes.
+	 * 
+	 * @param buf
+	 * @return Checksum
+	 */
+	private static int checksum (byte[] buf) {
+		int a = 0;
+		for (int i = 0; i < buf.length; i++) {
+			a ^= buf[i];
+		}
+		return a;
+	}
 	private static String byteArrayToHex (byte[] buf, int offset, int len) {
 		StringBuilder s = new StringBuilder();
 		for (int i = offset; i < (offset+len); i++) {
