@@ -18,13 +18,13 @@ description = "Connect to NTRIP service")
 public class Main implements Callable<Integer> {
 
 	
-	@Option(names = {"--ntrip-host"},description = "host name for NTRIP service")
+	@Option(names = {"--host"},description = "host name for NTRIP service")
 	private String ntripHost;
-	@Option(names = {"--ntrip-port"},description = "port number for NTRIP service")
+	@Option(names = {"--port"},description = "port number for NTRIP service")
 	private Integer ntripPort;	
-	@Option(names = {"--ntrip-username"},description = "username for NTRIP service")
+	@Option(names = {"--username"},description = "username for NTRIP service")
 	private String ntripUsername;
-	@Option(names = {"--ntrip-password"},description = "password for NTRIP service")
+	@Option(names = {"--password"},description = "password for NTRIP service")
 	private String ntripPassword;
 	
 
@@ -47,7 +47,9 @@ public class Main implements Callable<Integer> {
 
 		log.info("call()");	
 	
-		NTRIPClient client = new NTRIPClient(ntripHost,""+ntripPort,ntripUsername,ntripPassword);
+		NTRIPClient client = new NTRIPClient(ntripHost,ntripPort,ntripUsername,ntripPassword);
+		
+		client.connect();
 		
 		return 1;
 	}

@@ -6,6 +6,7 @@ import java.io.OutputStream;
 import java.net.Socket;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 
@@ -16,24 +17,77 @@ import lombok.extern.slf4j.Slf4j;
 public class NTRIPClient {
 
 	private static final String USER_AGENT = "ie.strix.gnss.ntrip.NTRIPClient/0.1.0";
-	
-	/**
-	 * Network TCP socket to NTRIP service.
-	 */
-	private Socket ntripSocket;
 
 	private String host;
-	private String port;
+	private Integer port;
 	private String username;
 	private String password;
+	
+	private OutputStream writeTo;
 
-	public NTRIPClient(String host, String port, String username, String password) {
+	public NTRIPClient(String host, Integer port, String username, String password) {
 		this.host = host;
 		this.port = port;
 		this.username = username;
 		this.password = password;
 	}
+	
+	public void setOutputStream (OutputStream out) {
+		this.writeTo = out;
+	}
 
+	public void connect() throws UnknownHostException, IOException {
+		
+		log.info("opening TCP socket to {}:{}", host,port);
+		Socket socket = new Socket(host, port);
+		
+		InputStream sin = socket.getInputStream();
+		OutputStream sout = socket.getOutputStream();
+		
+		String req = makeNtripRequest();
+		log.info("request={}",req);
+		sout.write(req.getBytes());
+		sout.flush();
+		
+		
+		String gga = "$GNGGA,160656.50,5316.95450720,N,00858.95182605,W,1,24,0.6,28.8719,M,57.9852,M,,*56\r\n";
+		log.info("writing GGA");
+		sout.write(gga.getBytes());
+		
+		byte[] buf = new byte[2048];
+		while (true) {
+			final int nbytes = sin.read(buf);
+			log.info("read {} bytes",nbytes);
+			//log.info(new String(buf));
+			writeTo.write(buf,0,nbytes);
+		}
+	}
+	
+	
+	
+	
+	private String makeNtripRequest() {
+		
+		// Combine username and password with a colon
+		String authString = username + ":" + password;
+
+		// Encode the combined string with Base64
+		String encodedAuth = Base64.getEncoder().encodeToString(authString.getBytes(StandardCharsets.UTF_8));
+
+		// Construct the header
+		String authHeader = "Basic " + encodedAuth;
+		
+		String request = "GET /NEAR-RTCM HTTP/1.1\r\n" + "Host: " + host + ":" + port + "\r\n"
+				+ "User-Agent: " + USER_AGENT + "\r\n" 
+				+ "Authorization: " + authHeader + "\r\n"
+				+ "Ntrip-Version: Ntrip/2.0\r\n" 
+				+ "Accept: */*\r\n" 
+				+ "Connection: close\r\n\r\n";
+		
+		return request;
+	}
+	
+	
 	/**
 	 * Open NTRIP connection and read corrections message and forward to to GNSS
 	 * device.
