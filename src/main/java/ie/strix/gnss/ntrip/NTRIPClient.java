@@ -28,6 +28,9 @@ public class NTRIPClient {
 	private InputStream ntripServerIn;
 	private OutputStream ntripServerOut;
 	
+	/** Timestamp at which the last GGA sentence was sent to the NTRIP server */
+	private long lastGgaSent = 0;
+	
 	private final SubmissionPublisher<byte[]> publisher = new SubmissionPublisher<>();
 
 	
@@ -109,8 +112,14 @@ public class NTRIPClient {
 	
 	public void sendGGA (String gga) throws IOException {
 		log.info("received GGA to send to NTRIP server: {}",gga);
-		ntripServerOut.write((gga + "\r\n").getBytes());
-		ntripServerOut.flush();
+		long now = System.currentTimeMillis();
+		
+		// Limit rate at which we send GGA sentences
+		if (now - lastGgaSent > 3000) {
+			ntripServerOut.write((gga + "\r\n").getBytes());
+			ntripServerOut.flush();
+			lastGgaSent = now;
+		}
 	}
 	
 	private String makeNtripRequest() {
