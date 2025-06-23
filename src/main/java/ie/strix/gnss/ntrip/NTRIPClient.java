@@ -111,11 +111,11 @@ public class NTRIPClient {
 	}
 	
 	public void sendGGA (String gga) throws IOException {
-		log.info("received GGA to send to NTRIP server: {}",gga);
 		long now = System.currentTimeMillis();
 		
-		// Limit rate at which we send GGA sentences
+		// Limit rate at which we send GGA to NTRIP server
 		if (now - lastGgaSent > 3000) {
+			log.info("sending GGA to NTRIP server: {}",gga);
 			ntripServerOut.write((gga + "\r\n").getBytes());
 			ntripServerOut.flush();
 			lastGgaSent = now;
