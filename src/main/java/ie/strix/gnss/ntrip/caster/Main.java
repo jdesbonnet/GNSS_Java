@@ -1,4 +1,4 @@
-package ie.strix.gnss.ntrip.client;
+package ie.strix.gnss.ntrip.caster;
 
 import java.util.concurrent.Callable;
 
@@ -10,7 +10,7 @@ import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
 
 @Slf4j
-@Command(name = "ntrip_client", 
+@Command(name = "ntrip_caster", 
 mixinStandardHelpOptions = true, 
 version = "0.1", 
 description = "Connect to NTRIP service")
@@ -18,14 +18,8 @@ description = "Connect to NTRIP service")
 public class Main implements Callable<Integer> {
 
 	
-	@Option(names = {"--host"},description = "host name for NTRIP service")
-	private String ntripHost;
 	@Option(names = {"--port"},description = "port number for NTRIP service")
-	private Integer ntripPort;	
-	@Option(names = {"--username"},description = "username for NTRIP service")
-	private String ntripUsername;
-	@Option(names = {"--password"},description = "password for NTRIP service")
-	private String ntripPassword;
+	private Integer ntripPort;
 	
 
 	public static void main(String... args) {
@@ -47,9 +41,8 @@ public class Main implements Callable<Integer> {
 
 		log.info("call()");	
 	
-		NtripClient client = new NtripClient(ntripHost,ntripPort,ntripUsername,ntripPassword);
-		
-		client.connect();
+		//NtripClient client = new NtripClient(ntripHost,ntripPort,ntripUsername,ntripPassword);
+		//client.connect();
 		
 		return 1;
 	}

@@ -1,4 +1,4 @@
-package ie.strix.gnss.ntrip;
+package ie.strix.gnss.ntrip.client;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -14,9 +14,9 @@ import java.util.concurrent.SubmissionPublisher;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-public class NTRIPClient {
+public class NtripClient {
 
-	private static final String USER_AGENT = "ie.strix.gnss.ntrip.NTRIPClient/0.1.0";
+	private static final String USER_AGENT = "ie.strix.gnss.ntrip.client.NtripClient/0.1.0";
 
 	private String host;
 	private Integer port;
@@ -34,7 +34,7 @@ public class NTRIPClient {
 	private final SubmissionPublisher<byte[]> publisher = new SubmissionPublisher<>();
 
 	
-	public NTRIPClient(String host, Integer port, String username, String password) {
+	public NtripClient(String host, Integer port, String username, String password) {
 		this.host = host;
 		this.port = port;
 		this.username = username;
