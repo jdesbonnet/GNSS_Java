@@ -58,12 +58,15 @@ public class NtripCaster {
 	 */
 	private void handleClient(Socket socket) {
 
+		log.info("handleClient()");
+
 		try {
 			InputStream in = socket.getInputStream();
 			// OutputStream out = socket.getOutputStream();
 			BufferedReader reader = new BufferedReader(new InputStreamReader(in));
 
 			String requestLine = reader.readLine();
+			log.info("requestLine={}",requestLine);
 			if (requestLine == null) {
 				socket.close();
 				log.error("unexpected null request line");
@@ -97,7 +100,7 @@ public class NtripCaster {
 		} catch (IOException e) {
 			log.error("Error handling client", e);
 		}
-		log.info("client disconnect");
+		//log.info("client disconnect");
 	}
 
 	private void handleSourceTable(OutputStream out) throws IOException {
@@ -115,8 +118,11 @@ public class NtripCaster {
 		out.flush();
 	}
 
+        /**
+	 * After parsing header, handle RTCM data feed from base station.
+	 */
 	private void handleSource(String mountpoint, Socket socket) {
-		log.info("Base station connecting: {}", mountpoint);
+		log.info("Base station connecting with mountpoint: {}", mountpoint);
 		try {
 			BaseStation station = new BaseStation(mountpoint, socket);
 			BaseStation old = stations.put(mountpoint, station);
@@ -125,7 +131,7 @@ public class NtripCaster {
 			}
 			station.start();
 		} catch (IOException e) {
-			log.error("Failed to register base station {}", mountpoint, e);
+			log.error("Failed to register base station with mountpoint: {}", mountpoint, e);
 			try {
 				socket.close();
 			} catch (IOException ignored) {
@@ -211,11 +217,13 @@ public class NtripCaster {
 		}
 
 		void start() {
+			log.info("start()");
 			running = true;
 			executor.submit(this::readLoop);
 		}
 
 		private void readLoop() {
+			log.info("readLoop()");
 			byte[] buf = new byte[4096];
 			int len;
 			try {
