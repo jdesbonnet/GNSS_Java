@@ -118,7 +118,7 @@ public class NtripCaster {
 		out.flush();
 	}
 
-        /**
+	/**
 	 * After parsing header, handle RTCM data feed from base station.
 	 */
 	private void handleSource(String mountpoint, Socket socket) {
@@ -145,9 +145,11 @@ public class NtripCaster {
 		if (station != null && station.isRunning()) {
 			log.info("Rover connecting to {}", mountpoint);
 			out.write("ICY 200 OK\r\n\r\n".getBytes());
-			RoverConnection rover = new RoverConnection(socket, out);
+			RoverConnection rover = new RoverConnection(mountpoint,socket);
 			station.addRover(rover);
-			rover.start(executor);
+			//rover.start(executor);
+			Thread roverThread = new Thread(rover);
+			roverThread.start();
 		} else {
 			out.write("ICY 404 Not Found\r\n\r\n".getBytes());
 			socket.close();
@@ -222,6 +224,9 @@ public class NtripCaster {
 			executor.submit(this::readLoop);
 		}
 
+		/**
+		 * Continue to read from base station forwarding RTCM messages on to connected rovers.
+		 */
 		private void readLoop() {
 			log.info("readLoop()");
 			byte[] buf = new byte[4096];
@@ -229,62 +234,60 @@ public class NtripCaster {
 			try {
 				while (running && (len = in.read(buf)) != -1) {
 					
-					
-					/*
-					log.info("read {} bytes on {}", len, this.mountpoint);
-					logOut.write(buf, 0, len);
-					logOut.flush();
-					log.info("casting to {} rovers", rovers.size());
-					for (RoverConnection r : rovers) {
-						r.send(buf, len);
-					}
-					*/
+					//log.info("read {} bytes from base station {}", len, mountpoint);
 
 					// We want to know where the base station is located. 
 					// Parse RTCM messages looking for type 1005  which holds 
 					// antenna location.
+
+					// scan buffer for RTCM messages
+					int pos = 0;
+					while (pos + 3 < len) {
+						if ((buf[pos] & 0xFF) == 0xD3) {
+							int length = ((buf[pos + 1] & 0x03) << 8) | (buf[pos + 2] & 0xFF);
+							if (pos + 3 + length + 3 <= len) { // include 3 parity bytes
+								// parse message
+								int payloadOffset = pos + 3;
+								// message type: first 12 bits
+								int msgType = ((buf[payloadOffset] & 0xFF) << 4)
+										| ((buf[payloadOffset + 1] & 0xF0) >> 4);
+								log.info("RTCM message: type={}, length={}", msgType, length);
+								if (msgType == 1005) {
+									// parse antenna position from 1005
+									BitReader br = new BitReader(buf, payloadOffset * 8 + 12);
+									int stationID = (int) br.readBits(12);
+									long x = br.readBits(38);
+									long y = br.readBits(38);
+									long z = br.readBits(38);
+									double xM = x * 0.0001;
+									double yM = y * 0.0001;
+									double zM = z * 0.0001;
+									log.info("Type 1005: stationID={}, ECEF X={}m, Y={}m, Z={}m", stationID, xM, yM,
+											zM);
+								}
+								pos += 3 + length + 3;
+								continue;
+							} else {
+								break; // wait for more data
+							}
+						}
+						pos++;
+					}
+					// log raw stream
+					logOut.write(buf, 0, len);
+					logOut.flush();
 					
-	                   // scan buffer for RTCM messages
-                    int pos = 0;
-                    while (pos + 3 < len) {
-                        if ((buf[pos] & 0xFF) == 0xD3) {
-                            int length = ((buf[pos+1] & 0x03) << 8) | (buf[pos+2] & 0xFF);
-                            if (pos + 3 + length + 3 <= len) { // include 3 parity bytes
-                                // parse message
-                                int payloadOffset = pos + 3;
-                                // message type: first 12 bits
-                                int msgType = ((buf[payloadOffset] & 0xFF) << 4) |
-                                              ((buf[payloadOffset+1] & 0xF0) >> 4);
-                                log.info("RTCM message: type={}, length={}", msgType, length);
-                                if (msgType == 1005) {
-                                    // parse antenna position from 1005
-                                    BitReader br = new BitReader(buf, payloadOffset*8 + 12);
-                                    int stationID = (int) br.readBits(12);
-                                    long x = br.readBits(38);
-                                    long y = br.readBits(38);
-                                    long z = br.readBits(38);
-                                    double xM = x * 0.0001;
-                                    double yM = y * 0.0001;
-                                    double zM = z * 0.0001;
-                                    log.info("Type 1005: stationID={}, ECEF X={}m, Y={}m, Z={}m",
-                                             stationID, xM, yM, zM);
-                                }
-                                pos += 3 + length + 3;
-                                continue;
-                            } else {
-                                break; // wait for more data
-                            }
-                        }
-                        pos++;
-                    }
-                    // log raw stream
-                    logOut.write(buf, 0, len);
-                    logOut.flush();
-                    for (RoverConnection r : rovers) {
-                        r.send(buf, len);
-                    }					
-					
-					
+					// Send message to all connected rovers
+					for (RoverConnection r : rovers) {
+						log.info("    sending to {}", r.toString());
+						try {
+							r.send(buf, len);
+						} catch (IOException e) {
+							log.error("error sending to rover, removing rover from list",e);
+							rovers.remove(r);
+						}
+					}
+
 				}
 			} catch (IOException e) {
 				log.error("Error in base station {} stream: " + e.toString(), mountpoint, e);
@@ -310,16 +313,16 @@ public class NtripCaster {
 				socket.close();
 			} catch (IOException ignored) {
 			}
-			log.info("Base station disconnected: {}", mountpoint);
+			log.info("stop(): base station {} disconnected", mountpoint);
 		}
 	}
 
-	private static class RoverConnection {
+	private static class RoverConnection2 {
 		private final Socket socket;
 		private final OutputStream out;
 		private volatile boolean open = true;
 
-		RoverConnection(Socket socket, OutputStream out) {
+		RoverConnection2(Socket socket, OutputStream out) {
 			this.socket = socket;
 			this.out = out;
 		}
@@ -340,6 +343,7 @@ public class NtripCaster {
 			try {
 				out.write(data, 0, len);
 			} catch (IOException e) {
+				log.error("send()",e);
 				close();
 			}
 		}
@@ -352,30 +356,37 @@ public class NtripCaster {
 				socket.close();
 			} catch (IOException ignored) {
 			}
-			log.info("Rover disconnected");
+			log.info("rover_" + this.socket.getInetAddress() + " disconnected");
+		}
+		
+		public String toString() {
+			return "rover_" + this.socket.getInetAddress() + " open=" + open;
+		}
+		
+	}
+
+	// utility to read bits from byte array
+	private static class BitReader {
+		private final byte[] data;
+		private int bitPos;
+
+		BitReader(byte[] data, int bitPos) {
+			this.data = data;
+			this.bitPos = bitPos;
+		}
+
+		long readBits(int n) {
+			long val = 0;
+			for (int i = 0; i < n; i++) {
+				int byteIndex = bitPos / 8;
+				int bitIndex = 7 - (bitPos % 8);
+				val = (val << 1) | ((data[byteIndex] >> bitIndex) & 1);
+				bitPos++;
+			}
+			return val;
 		}
 	}
 
-    // utility to read bits from byte array
-    private static class BitReader {
-        private final byte[] data;
-        private int bitPos;
-        BitReader(byte[] data, int bitPos) {
-            this.data = data;
-            this.bitPos = bitPos;
-        }
-        long readBits(int n) {
-            long val = 0;
-            for (int i = 0; i < n; i++) {
-                int byteIndex = bitPos / 8;
-                int bitIndex = 7 - (bitPos % 8);
-                val = (val << 1) | ((data[byteIndex] >> bitIndex) & 1);
-                bitPos++;
-            }
-            return val;
-        }
-    }
-    
 	public static void main(String[] args) throws IOException {
 		NtripCaster caster = new NtripCaster();
 		Runtime.getRuntime().addShutdownHook(new Thread(() -> {
