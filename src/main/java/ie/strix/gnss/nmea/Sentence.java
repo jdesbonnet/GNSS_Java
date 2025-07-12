@@ -67,6 +67,15 @@ public class Sentence {
 
 	}
 	
+	public static Sentence valueOf(String sentence) {
+		String sentenceId = sentence.substring(3,6);
+		switch (sentenceId) {
+		case "GGA": return new GGA(sentence);
+		case "GSV": return new GSV(sentence);
+		default: return null;
+		}
+	}
+	
 	private static Constellation talkerIdToConstellation( String talkerId) {
 		switch (talkerId) {
 		case "GP": return Constellation.GPS;

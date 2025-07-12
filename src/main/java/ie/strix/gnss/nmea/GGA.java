@@ -1,16 +1,19 @@
 package ie.strix.gnss.nmea;
 
-import lombok.Data;
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-@Data
+@Getter
 public class GGA extends Sentence {
 
 	/** Milliseconds since midnight UTC */
 	private int timeInDay;
 
+	@Getter
 	private Double latitude;
+	
+	@Getter
 	private Double longitude;
 
 	private Integer fixType;
