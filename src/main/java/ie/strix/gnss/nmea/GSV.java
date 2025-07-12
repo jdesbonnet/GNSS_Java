@@ -40,7 +40,7 @@ public class GSV extends Sentence {
 		
 		// Signal id 
 		int signalId = nExtra > 0 ? Integer.valueOf(parts[4 + nSignal*4],16) : 0;
-
+		
 		log.info("nSignal={}, signalId={}", nSignal, signalId);
 		
 		signal = new SignalQuality[nSignal];
@@ -49,7 +49,7 @@ public class GSV extends Sentence {
 			int ele = Integer.valueOf(parts[4+i*4 + 1]);
 			int azi = Integer.valueOf(parts[4+i*4 + 2]);
 			int snr = Integer.valueOf(parts[4+i*4 + 3]);
-			signal[i] = new SignalQuality(prn,ele,azi,snr, signalId);
+			signal[i] = new SignalQuality(this.constellation,prn,ele,azi,snr, signalId);
 		}
 		
 
@@ -57,12 +57,14 @@ public class GSV extends Sentence {
 	
 	
 	public static final class SignalQuality {
+		private Constellation constellation;
 		private int prn;
 		private int elevation;
 		private int azimuth;
 		private int snr;
 		private int signalId;
-		public SignalQuality (int prn, int ele, int azi, int snr, int signalId) {
+		public SignalQuality (Constellation constellation, int prn, int ele, int azi, int snr, int signalId) {
+			this.constellation = constellation;
 			this.prn = prn;
 			this.elevation = ele;
 			this.azimuth = azi;
@@ -70,7 +72,7 @@ public class GSV extends Sentence {
 			this.signalId = signalId;
 		}
 		public String toString() {
-			return "sig=" + this.signalId + " (" + this.elevation+","+this.azimuth + ") snr=" + snr;
+			return this.constellation + " sig=" + this.signalId + " (" + this.elevation+","+this.azimuth + ") snr=" + snr;
 		}
 	}
 	

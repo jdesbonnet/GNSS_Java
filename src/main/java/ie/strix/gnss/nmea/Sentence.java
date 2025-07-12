@@ -16,6 +16,7 @@ public class Sentence {
 	private boolean nmea  = false;
 	private String talkerId;
 	protected String[] parts;
+	protected Constellation constellation;
 	
 	public Sentence (String sentence) {
 		this.sentence = sentence;
@@ -30,6 +31,8 @@ public class Sentence {
 			// Remove the checksum from the last part.
 			String lastPart = parts[parts.length-1];
 			parts[parts.length-1] = lastPart.substring(0,lastPart.indexOf('*'));
+			constellation = talkerIdToConstellation(talkerId);
+			
 		}
 	}
 	
@@ -62,6 +65,17 @@ public class Sentence {
 		String expectedChecksum = String.format("%02X", checksum);
 		return expectedChecksum.equalsIgnoreCase(checksumStr);
 
+	}
+	
+	private static Constellation talkerIdToConstellation( String talkerId) {
+		switch (talkerId) {
+		case "GP": return Constellation.GPS;
+		case "GL": return Constellation.GLONASS;
+		case "GA": return Constellation.GALILEO;
+		case "GB": return Constellation.BEIDOU;
+		case "GN": return Constellation.GENERIC;
+		default: return null;
+		}
 	}
 
 }
