@@ -1,5 +1,8 @@
 package ie.strix.gnss.nmea;
 
+import lombok.Getter;
+
+@Getter
 public enum Signal {
 
 	GPS_L1_CA(1,Constellation.GPS,"L1 C/A"),
@@ -38,14 +41,24 @@ public enum Signal {
 	BEIDOU_B2Q(12,Constellation.BEIDOU,"B2Q"),
 	;
 	
-	private int id;
+	private int nmeaSignalId;
 	private Constellation constellation;
 	private String name;
 
-	private Signal (int id, Constellation constellation, String name) {
-		this.id = id;
+	private Signal (int nmeaSignalId, Constellation constellation, String name) {
+		this.nmeaSignalId = nmeaSignalId;
 		this.constellation = constellation;
 		this.name = name;
+	}
+	
+	public static Signal getSignal(Constellation constellation, int nmeaSignalId) {
+		// TODO: replace with hash table.
+		for (Signal signal : Signal.values()) {
+			if ( (signal.getConstellation() == constellation) && (signal.getNmeaSignalId() == nmeaSignalId) ) {
+				return signal;
+			}
+		}
+		return null;
 	}
 	
 }

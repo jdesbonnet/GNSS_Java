@@ -6,7 +6,7 @@ import lombok.extern.slf4j.Slf4j;
 
 /**
  * 
- * Note: NMEA-0183 v4.10+ supports an extra signal/system id at the end of the sentence.
+ * Note: NMEA-0183 v4.10+ supports an extra signals/system id at the end of the sentence.
  * 
  * @author joe
  *
@@ -19,7 +19,7 @@ public class GSV extends Sentence {
 	private int numberOfMessages;
 	private int nSat;
 	
-	private SignalQuality[] signal;
+	private SignalQuality[] signals;
 
 	public GSV(String sentence) {
 		super(sentence);
@@ -40,16 +40,17 @@ public class GSV extends Sentence {
 		
 		// Signal id 
 		int signalId = nExtra > 0 ? Integer.valueOf(parts[4 + nSignal*4],16) : 0;
+		Signal signal = Signal.getSignal(constellation, signalId);
 		
 		log.info("nSignal={}, signalId={}", nSignal, signalId);
 		
-		signal = new SignalQuality[nSignal];
+		signals = new SignalQuality[nSignal];
 		for (int i = 0; i < nSignal; i++) {
 			int prn = Integer.valueOf(parts[4+i*4]);
 			int ele = Integer.valueOf(parts[4+i*4 + 1]);
 			int azi = Integer.valueOf(parts[4+i*4 + 2]);
 			int snr = Integer.valueOf(parts[4+i*4 + 3]);
-			signal[i] = new SignalQuality(this.constellation,prn,ele,azi,snr, signalId);
+			signals[i] = new SignalQuality(signal,prn,ele,azi,snr, signalId);
 		}
 		
 
@@ -57,14 +58,14 @@ public class GSV extends Sentence {
 	
 	
 	public static final class SignalQuality {
-		private Constellation constellation;
+		private Signal signal;
 		private int prn;
 		private int elevation;
 		private int azimuth;
 		private int snr;
 		private int signalId;
-		public SignalQuality (Constellation constellation, int prn, int ele, int azi, int snr, int signalId) {
-			this.constellation = constellation;
+		public SignalQuality (Signal signal, int prn, int ele, int azi, int snr, int signalId) {
+			this.signal = signal;
 			this.prn = prn;
 			this.elevation = ele;
 			this.azimuth = azi;
@@ -72,7 +73,7 @@ public class GSV extends Sentence {
 			this.signalId = signalId;
 		}
 		public String toString() {
-			return this.constellation + " sig=" + this.signalId + " (" + this.elevation+","+this.azimuth + ") snr=" + snr;
+			return "sig=" + this.signal + " (" + this.elevation+","+this.azimuth + ") snr=" + snr;
 		}
 	}
 	
@@ -88,7 +89,7 @@ public class GSV extends Sentence {
 		String[] lines = testSentence.split("\n");
 		for (String line : lines) {
 			GSV gsv = new GSV(line);
-			SignalQuality[] signals = gsv.getSignal();
+			SignalQuality[] signals = gsv.getSignals();
 			for (int i = 0; i < signals.length; i++) {
 				log.info("    " + signals[i]);
 			}
