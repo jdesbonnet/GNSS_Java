@@ -3,6 +3,13 @@ package ie.strix.gnss.rtcm;
 /**
  * Related to RTCM v3 messages.
  * 
+ * RTCM3 message:
+ * 0xD3 <msglenlsb> <msglenmsb> [payload] <crcbyte0> <crcbyte1> <crcbyte2>
+ *
+ * msglen: length excluding 0xD3 preamble and excluding 3 bytes of CRC.
+ * CRC is computed on bytes from and including preamble to up but excluding the CRC.
+ * 
+ * First 12 bits of payload define message type.
  *
  */
 public class RTCM3 {

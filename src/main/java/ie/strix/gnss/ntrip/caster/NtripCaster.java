@@ -44,7 +44,7 @@ public class NtripCaster {
 			try {
 				Socket socket = serverSocket.accept();
 				log.info("connection received from " + socket);
-				executor.submit(() -> handleClient(socket));
+				executor.submit(() -> handleIncomingConnection(socket));
 			} catch (IOException e) {
 				if (!serverSocket.isClosed()) {
 					log.error("Error accepting connection", e);
@@ -56,7 +56,7 @@ public class NtripCaster {
 	/**
 	 * Handle incoming TCP connection on NTRIP port.
 	 */
-	private void handleClient(Socket socket) {
+	private void handleIncomingConnection(Socket socket) {
 
 		log.info("handleClient()");
 
@@ -75,7 +75,7 @@ public class NtripCaster {
 			String[] parts = requestLine.split(" ");
 			if (parts.length < 2) {
 				socket.close();
-				log.error("unexpected request format");
+				log.error("unexpected request format: expected two or more space separated words in request line");
 				return;
 			}
 			String method = parts[0];
@@ -86,15 +86,16 @@ public class NtripCaster {
 			}
 
 			if ("GET".equalsIgnoreCase(method) && ("/".equals(path) || "".equals(path))) {
-				// handleSourceTable(socket);
+				handleSourceTable(socket);
 				socket.close();
 			} else if ("SOURCE".equalsIgnoreCase(method)) {
 				String mountpoint = path.startsWith("/") ? path.substring(1) : path;
-				handleSource(mountpoint, socket);
+				handleBasestation(mountpoint, socket);
 			} else if ("GET".equalsIgnoreCase(method)) {
 				String mountpoint = path.startsWith("/") ? path.substring(1) : path;
 				handleRover(mountpoint, socket);
 			} else {
+				log.error("unexpected method {}", method);
 				socket.close();
 			}
 		} catch (IOException e) {
@@ -103,7 +104,8 @@ public class NtripCaster {
 		//log.info("client disconnect");
 	}
 
-	private void handleSourceTable(OutputStream out) throws IOException {
+	private void handleSourceTable(Socket socket) throws IOException {
+		OutputStream out = socket.getOutputStream();
 		log.info("Source-table request received");
 		out.write("SOURCETABLE 200 OK\r\n".getBytes());
 		for (String mount : stations.keySet()) {
@@ -121,10 +123,10 @@ public class NtripCaster {
 	/**
 	 * After parsing header, handle RTCM data feed from base station.
 	 */
-	private void handleSource(String mountpoint, Socket socket) {
+	private void handleBasestation(String mountpoint, Socket socket) {
 		log.info("Base station connecting with mountpoint: {}", mountpoint);
 		try {
-			BaseStation station = new BaseStation(mountpoint, socket);
+			BaseStation station = new BaseStation(this, mountpoint, socket);
 			BaseStation old = stations.put(mountpoint, station);
 			if (old != null) {
 				old.stop();
@@ -203,191 +205,17 @@ public class NtripCaster {
 		}
 	}
 
-	private class BaseStation {
-		private final String mountpoint;
-		private final Socket socket;
-		private final InputStream in;
-		private final OutputStream logOut;
-		private final List<RoverConnection> rovers = new CopyOnWriteArrayList<>();
-		private volatile boolean running = false;
 
-		BaseStation(String mountpoint, Socket socket) throws IOException {
-			this.mountpoint = mountpoint;
-			this.socket = socket;
-			this.in = socket.getInputStream();
-			this.logOut = new BufferedOutputStream(new FileOutputStream("rtcm-" + mountpoint + ".log", true));
-		}
-
-		void start() {
-			log.info("start()");
-			running = true;
-			executor.submit(this::readLoop);
-		}
-
-		/**
-		 * Continue to read from base station forwarding RTCM messages on to connected rovers.
-		 */
-		private void readLoop() {
-			log.info("readLoop()");
-			byte[] buf = new byte[4096];
-			int len;
-			try {
-				while (running && (len = in.read(buf)) != -1) {
-					
-					//log.info("read {} bytes from base station {}", len, mountpoint);
-
-					// We want to know where the base station is located. 
-					// Parse RTCM messages looking for type 1005  which holds 
-					// antenna location.
-
-					// scan buffer for RTCM messages
-					int pos = 0;
-					while (pos + 3 < len) {
-						if ((buf[pos] & 0xFF) == 0xD3) {
-							int length = ((buf[pos + 1] & 0x03) << 8) | (buf[pos + 2] & 0xFF);
-							if (pos + 3 + length + 3 <= len) { // include 3 parity bytes
-								// parse message
-								int payloadOffset = pos + 3;
-								// message type: first 12 bits
-								int msgType = ((buf[payloadOffset] & 0xFF) << 4)
-										| ((buf[payloadOffset + 1] & 0xF0) >> 4);
-								log.info("RTCM message: type={}, length={}", msgType, length);
-								if (msgType == 1005) {
-									// parse antenna position from 1005
-									BitReader br = new BitReader(buf, payloadOffset * 8 + 12);
-									int stationID = (int) br.readBits(12);
-									long x = br.readBits(38);
-									long y = br.readBits(38);
-									long z = br.readBits(38);
-									double xM = x * 0.0001;
-									double yM = y * 0.0001;
-									double zM = z * 0.0001;
-									log.info("Type 1005: stationID={}, ECEF X={}m, Y={}m, Z={}m", stationID, xM, yM,
-											zM);
-								}
-								pos += 3 + length + 3;
-								continue;
-							} else {
-								break; // wait for more data
-							}
-						}
-						pos++;
-					}
-					// log raw stream
-					logOut.write(buf, 0, len);
-					logOut.flush();
-					
-					// Send message to all connected rovers
-					for (RoverConnection r : rovers) {
-						log.info("    sending to {}", r.toString());
-						try {
-							r.send(buf, len);
-						} catch (IOException e) {
-							log.error("error sending to rover, removing rover from list",e);
-							rovers.remove(r);
-						}
-					}
-
-				}
-			} catch (IOException e) {
-				log.error("Error in base station {} stream: " + e.toString(), mountpoint, e);
-			} finally {
-				stop();
-			}
-		}
-
-		boolean isRunning() {
-			return running;
-		}
-
-		void addRover(RoverConnection rover) {
-			rovers.add(rover);
-		}
-
-		void stop() {
-			running = false;
-			stations.remove(mountpoint);
-			rovers.forEach(RoverConnection::close);
-			try {
-				logOut.close();
-				socket.close();
-			} catch (IOException ignored) {
-			}
-			log.info("stop(): base station {} disconnected", mountpoint);
-		}
-	}
-
-	private static class RoverConnection2 {
-		private final Socket socket;
-		private final OutputStream out;
-		private volatile boolean open = true;
-
-		RoverConnection2(Socket socket, OutputStream out) {
-			this.socket = socket;
-			this.out = out;
-		}
-
-		void start(ExecutorService executor) {
-			executor.submit(() -> {
-				try {
-					socket.getInputStream().read();
-				} catch (IOException ignored) {
-				}
-				close();
-			});
-		}
-
-		void send(byte[] data, int len) {
-			if (!open)
-				return;
-			try {
-				out.write(data, 0, len);
-			} catch (IOException e) {
-				log.error("send()",e);
-				close();
-			}
-		}
-
-		void close() {
-			if (!open)
-				return;
-			open = false;
-			try {
-				socket.close();
-			} catch (IOException ignored) {
-			}
-			log.info("rover_" + this.socket.getInetAddress() + " disconnected");
-		}
-		
-		public String toString() {
-			return "rover_" + this.socket.getInetAddress() + " open=" + open;
-		}
-		
-	}
-
-	// utility to read bits from byte array
-	private static class BitReader {
-		private final byte[] data;
-		private int bitPos;
-
-		BitReader(byte[] data, int bitPos) {
-			this.data = data;
-			this.bitPos = bitPos;
-		}
-
-		long readBits(int n) {
-			long val = 0;
-			for (int i = 0; i < n; i++) {
-				int byteIndex = bitPos / 8;
-				int bitIndex = 7 - (bitPos % 8);
-				val = (val << 1) | ((data[byteIndex] >> bitIndex) & 1);
-				bitPos++;
-			}
-			return val;
-		}
-	}
 
 	public static void main(String[] args) throws IOException {
+
+
+		System.setProperty("org.slf4j.simpleLogger.showDateTime", "true");
+		System.setProperty("org.slf4j.simpleLogger.dateTimeFormat", "yyyy-MM-dd'T'HH:mm:ss'Z'");
+		System.setProperty("org.slf4j.simpleLogger.defaultLogLevel", "info");
+		System.setProperty("org.slf4j.simpleLogger.dateTimeFormat", "yyyy-MM-dd HH:mm:ss");
+
+
 		NtripCaster caster = new NtripCaster();
 		Runtime.getRuntime().addShutdownHook(new Thread(() -> {
 			try {

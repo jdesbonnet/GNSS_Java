@@ -9,6 +9,10 @@ import java.net.Socket;
 
 import lombok.extern.slf4j.Slf4j;
 
+/**
+ * Information related to a rover TCP connection.
+ *
+ */
 @Slf4j
 public class RoverConnection implements Runnable {
 
@@ -17,6 +21,8 @@ public class RoverConnection implements Runnable {
 	private InputStream in;
 	private OutputStream out;
 	private boolean open = false;
+	private long bytesReceived = 0;
+	private long bytesSent = 0;
 	
 	public RoverConnection (String mountpoint, Socket roverSocket) {
 		this.mountpoint = mountpoint;
@@ -32,6 +38,7 @@ public class RoverConnection implements Runnable {
 		} catch (IOException e) {
 			log.error("error in mainLoop():",e);
 		}
+		log.info("*** ROVER DISCONNECT");
 		
 	}
 	
@@ -47,6 +54,8 @@ public class RoverConnection implements Runnable {
 		String line;
 		while ( (line = br.readLine()) != null) {
 			log.info("received from rover: {}", line);
+			// Since NMEA0183 is strictly ASCII, char count = byte count
+			bytesReceived += line.length();
 		}
 		
 	}
@@ -54,6 +63,7 @@ public class RoverConnection implements Runnable {
 	public void send (byte[] data,int len) throws IOException {
 		//try {
 			out.write(data,0,len);
+			bytesSent += len;
 		//} catch (IOException e) {
 		//	log.error("send():",e);
 		//	open = false;
@@ -69,6 +79,6 @@ public class RoverConnection implements Runnable {
 	}
 	
 	public String toString () {
-		return "rover_" + this.mountpoint + "_at_" + this.roverSocket.getInetAddress().getHostName();
+		return "mountpoint_" + this.mountpoint + "_rover_" + this.roverSocket.getInetAddress().getHostName();
 	}
 }
