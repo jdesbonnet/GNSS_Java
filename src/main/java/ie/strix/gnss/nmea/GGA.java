@@ -31,7 +31,10 @@ public class GGA extends Sentence {
 
 	public GGA(String sentence) {
 		super(sentence);
-		parse();
+		
+		if (isChecksumValid()) {
+			parse();
+		}
 	}
 
 	private void parse() {

@@ -23,7 +23,10 @@ public class GSV extends Sentence {
 
 	public GSV(String sentence) {
 		super(sentence);
-		parse();
+		
+		if (isChecksumValid()) {
+			parse();
+		}
 	}
 
 	private void parse() {

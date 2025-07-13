@@ -40,22 +40,53 @@ public class Stream {
 	
 	public void processSentence(String sentenceStr) {
 		log.info(sentenceStr);
-		Sentence sentence = Sentence.valueOf(sentenceStr);
-		if (sentence == null) {
+		
+		if ( ! Util.isChecksumValid(sentenceStr)) {
+			log.info("not valid");
 			return;
 		}
-		log.info("sss={}",sentence.getClass());
+		
+		Sentence sentence = Sentence.valueOf(sentenceStr);
+		
+		if (sentence == null) {
+			log.info("sentence is null");
+			return;
+		}
+		
+		if (sentence == null || ! sentence.isChecksumValid()) {
+			log.info("not valid: invalid checksum");
+			return;
+		}
+		
+		final int PRN = 14;
+		
+		//log.info("sss={}",sentence.getClass());
 		if (sentence instanceof GGA) {
 			GGA gga = (GGA)sentence;
 			this.latitude = gga.getLatitude();
-			this.latitude = gga.getLongitude();
+			this.longitude = gga.getLongitude();
 			this.altitude = gga.getAltitude();
 			
 			this.timeInDay = gga.getTimeInDay();
 			
 			if (this.timeInDay != prevTimeInDay) {
 				// process signals
+				log.info("timeInDay={}",timeInDay);
+				for (SignalQuality sq : signals) {
+					log.info("SQ=" + sq);
+					if ( sq.getSignal() == Signal.GPS_L1_CA && sq.getPrn() == PRN) {
+						l1snr = sq.getSnr();
+					}
+					
+					if ( sq.getSignal() == Signal.GPS_L2_PY &&  sq.getPrn() == PRN) {
+						l2snr = sq.getSnr();
+					}
+					if ( sq.getSignal() == Signal.GPS_L5_Q &&  sq.getPrn() == PRN ) {
+						l5snr = sq.getSnr();
+					}
+				}
 				log.info("SIGQ {} {} {} {} {} {}",latitude,longitude,altitude,l1snr,l2snr,l5snr);
+				System.out.println("" + latitude + " " + longitude + " " + altitude + " " + l1snr + " " + l2snr + " " + l5snr);
 
 				signals = new ArrayList<>();
 				prevTimeInDay = this.timeInDay;
@@ -71,48 +102,6 @@ public class Stream {
 		if (sentence instanceof GSV) {
 			GSV gsv = (GSV)sentence;
 			signals.addAll(List.of(gsv.getSignals()));
-			//signals.add(List.of(gsv.getSignals());
-			
-			// Group by constellation-prn
-			Map<String,List<SignalQuality>> byPrn = new HashMap<>();
-			for (SignalQuality sq : signals) {
-				log.info("sq={}",sq);
-				String key = sq.getSignal().getConstellation() + "_" + sq.getPrn();
-				List<SignalQuality> list = byPrn.get(key);
-				if (list == null) {
-					list = new ArrayList<SignalQuality>();
-					byPrn.put(key, list);
-				}
-				list.add(sq);
-			}
-			
-
-			int PRN = 14;
-			
-			for (String key : byPrn.keySet()) {
-				List<SignalQuality> list = byPrn.get(key);
-				Set<Integer> prns = new HashSet<>();
-				for (SignalQuality sq : list) {
-					prns.add(sq.getPrn());
-					
-					if ( sq.getPrn() == PRN && sq.getSignal().getName()=="GPS_L1_CA") {
-						l1snr = sq.getSnr();
-					}
-					
-					if ( sq.getPrn() == PRN && sq.getSignal().getName()=="GPS_L2_PY") {
-						l2snr = sq.getSnr();
-					}
-					if ( sq.getPrn() == PRN && sq.getSignal().getName()=="GPS_L5_Q") {
-						l5snr = sq.getSnr();
-					}
-				}
-				StringBuilder sb = new StringBuilder();
-				for (Integer prn : prns) {
-					sb.append("" + prn + " ");
-				}
-				log.info("{}: {}", key, sb.toString());
-			}
-			signals = new ArrayList<SignalQuality>();
 		}
 	}
 	
