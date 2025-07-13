@@ -41,6 +41,11 @@ public class GSV extends Sentence {
 		// Signal id 
 		int signalId = nExtra > 0 ? Integer.valueOf(parts[4 + nSignal*4],16) : 0;
 		Signal signal = Signal.getSignal(constellation, signalId);
+		if (signal == null) {
+			String msg = "signal not found for id=" + signalId + " constellation={}" + constellation;
+			log.error(msg);;
+			throw new IllegalArgumentException(msg);
+		}
 		
 		log.info("nSignal={}, signalId={}", nSignal, signalId);
 		
@@ -57,25 +62,7 @@ public class GSV extends Sentence {
 	}
 	
 	
-	public static final class SignalQuality {
-		private Signal signal;
-		private int prn;
-		private int elevation;
-		private int azimuth;
-		private int snr;
-		private int signalId;
-		public SignalQuality (Signal signal, int prn, int ele, int azi, int snr, int signalId) {
-			this.signal = signal;
-			this.prn = prn;
-			this.elevation = ele;
-			this.azimuth = azi;
-			this.snr = snr;
-			this.signalId = signalId;
-		}
-		public String toString() {
-			return "sig=" + this.signal + " (" + this.elevation+","+this.azimuth + ") snr=" + snr;
-		}
-	}
+	
 	
 
 	

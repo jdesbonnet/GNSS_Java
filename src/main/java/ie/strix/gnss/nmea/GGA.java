@@ -31,7 +31,7 @@ public class GGA extends Sentence {
 
 	public GGA(String sentence) {
 		super(sentence);
-
+		parse();
 	}
 
 	private void parse() {
@@ -49,6 +49,10 @@ public class GGA extends Sentence {
 		if (timeStr.length() == 0 || latStr.length() == 0 || lngStr.length() == 0) {
 			return;
 		}
+		
+		this.timeInDay = Util.parseNmeaTimestamp(timeStr);
+
+		
 
 		try {
 			nSat = Integer.valueOf(nSatStr);
@@ -89,29 +93,6 @@ public class GGA extends Sentence {
 			latitude = null;
 			longitude = null;
 			altitude = null;
-		}
-
-		int timeStrLen = timeStr.length();
-		Integer hh = Integer.valueOf(timeStr.substring(0, 2));
-		Integer mm = Integer.valueOf(timeStr.substring(2, 4));
-		Integer ss = Integer.valueOf(timeStr.substring(4, 6));
-		timeInDay = (hh * 3600 + mm * 60 + ss) * 1000;
-
-		// Is there a sub-second part after the radix point? I've seen 1 and 2 digits
-		// after
-		// the radix ('decimal') point. Is there any GNSS receiver that outputs ms?
-		if (timeStrLen > 6) {
-			Integer SSS = Integer.valueOf(timeStr.substring(7));
-			if (timeStrLen == 9) {
-				// 2 digits after the radix point
-				timeInDay += SSS * 10;
-			} else if (timeStrLen == 8) {
-				// 1 digit after the radix point
-				timeInDay += SSS * 100;
-			} else if (timeStrLen == 10) {
-				// 3 digits after the radix point (never seen this)
-				timeInDay += SSS;
-			}
 		}
 
 		try {

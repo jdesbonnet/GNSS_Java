@@ -13,12 +13,14 @@ public enum Signal {
 	GPS_L2C_L(6,Constellation.GPS,"L2C-L"),
 	GPS_L5_I(7,Constellation.GPS,"L2C-M"),
 	GPS_L5_Q(8,Constellation.GPS,"L2C-L"),
-	
+	GPS_UNK9(9,Constellation.GPS,"Unknown-9"),
+
 	GLONASS_G1_CA(1,Constellation.GLONASS,"G1 C/A"),
 	GLONASS_G1_P(2,Constellation.GLONASS,"G1 P"),
 	GLONASS_G2_CA(3,Constellation.GLONASS,"G2 C/A"),
 	GLONASS_G2_P(4,Constellation.GLONASS,"G2 P"),
-	
+	GLONASS_UNK5(5,Constellation.GLONASS,"Unknown-5"),
+
 	GALILEO_E5A(1,Constellation.GALILEO, "E5a"),
 	GALILEO_E5B(2,Constellation.GALILEO, "E5b"),
 	GALILEO_E5AB(3,Constellation.GALILEO, "E5a+b"),
@@ -39,6 +41,8 @@ public enum Signal {
 	BEIDOU_B3A(10,Constellation.BEIDOU,"B3A"),
 	BEIDOU_B2I(11,Constellation.BEIDOU,"B2I"),
 	BEIDOU_B2Q(12,Constellation.BEIDOU,"B2Q"),
+	
+	NAVIC_UNK1(1,Constellation.NAVIC,"Unknown-1")
 	;
 	
 	private int nmeaSignalId;

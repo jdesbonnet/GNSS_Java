@@ -69,9 +69,11 @@ public class Sentence {
 	
 	public static Sentence valueOf(String sentence) {
 		String sentenceId = sentence.substring(3,6);
+		log.info("sentenceId={}", sentenceId);
 		switch (sentenceId) {
 		case "GGA": return new GGA(sentence);
 		case "GSV": return new GSV(sentence);
+		case "RMC": return new RMC(sentence);
 		default: return null;
 		}
 	}
@@ -82,6 +84,7 @@ public class Sentence {
 		case "GL": return Constellation.GLONASS;
 		case "GA": return Constellation.GALILEO;
 		case "GB": return Constellation.BEIDOU;
+		case "GI": return Constellation.NAVIC;
 		case "GN": return Constellation.GENERIC;
 		default: return null;
 		}
