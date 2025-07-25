@@ -5,6 +5,7 @@ import java.io.*;
 import java.net.*;
 import java.util.*;
 import java.util.concurrent.*;
+
 import com.sun.net.httpserver.*;
 
 /**
@@ -25,9 +26,14 @@ public class NtripCaster {
 	private HttpServer apiServer;
 
 	public NtripCaster() throws IOException {
+		
+		// NTRIP protocol
 		serverSocket = new ServerSocket(NTRIP_PORT);
+		
+		// HTTP API
 		apiServer = HttpServer.create(new InetSocketAddress(API_PORT), 0);
-		apiServer.createContext("/stations", new StationsHandler());
+		apiServer.createContext("/stations", new GetStationsHandler(this));
+		apiServer.createContext("/status", new PostStatusHandler(this));
 		apiServer.setExecutor(Executors.newSingleThreadExecutor());
 	}
 
@@ -158,43 +164,19 @@ public class NtripCaster {
 		}
 	}
 
-	public List<StationStatus> listStations() {
+	public List<StationStatus> listStations_old() {
 		List<StationStatus> list = new ArrayList<>();
 		stations.forEach((name, st) -> list.add(new StationStatus(name, st.isRunning())));
 		return list;
 	}
-
-	private class StationsHandler implements HttpHandler {
-		@Override
-		public void handle(HttpExchange exchange) throws IOException {
-			if (!"GET".equalsIgnoreCase(exchange.getRequestMethod())) {
-				exchange.sendResponseHeaders(405, -1);
-				return;
-			}
-			String response = buildStationsJson();
-			byte[] bytes = response.getBytes();
-			exchange.getResponseHeaders().add("Content-Type", "application/json");
-			exchange.sendResponseHeaders(200, bytes.length);
-			try (OutputStream os = exchange.getResponseBody()) {
-				os.write(bytes);
-			}
-		}
-
-		private String buildStationsJson() {
-			StringBuilder sb = new StringBuilder();
-			sb.append("[");
-			for (StationStatus s : listStations()) {
-				sb.append("{").append("\"mountpoint\":\"").append(s.mountpoint).append("\",").append("\"live\":")
-						.append(s.live).append("},");
-			}
-			if (sb.charAt(sb.length() - 1) == ',') {
-				sb.setLength(sb.length() - 1);
-			}
-			sb.append("]");
-			return sb.toString();
-		}
+	public List<BaseStation> listStations() {
+		//List<StationStatus> list = new ArrayList<>();
+		//stations.forEach((name, st) -> list.add(new StationStatus(name, st.isRunning())));
+		//return list;
+		//return stations.values();
+		return new ArrayList<>(stations.values());
 	}
-
+	
 	public static class StationStatus {
 		public final String mountpoint;
 		public final boolean live;
