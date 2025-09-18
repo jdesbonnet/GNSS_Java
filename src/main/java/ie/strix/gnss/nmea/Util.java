@@ -37,6 +37,51 @@ public class Util {
 		return timeInDay;
 	}
 	
+	
+	/**
+	 * Return time from midnight UTC is milliseconds.
+	 * @param sentence
+	 * @param timeIndex
+	 * @return
+	 */
+	public static int parseNmeaTimestamp (char[] sentence, int timeIndex) {
+		int hh = parsePositiveTwoDigitInt(sentence,timeIndex);
+		int mm = parsePositiveTwoDigitInt(sentence,timeIndex+2);
+		int ss = parsePositiveTwoDigitInt(sentence,timeIndex+4);
+		int timeInDay = (hh * 3600 + mm * 60 + ss) * 1000;		
+		return timeInDay;
+	}
+	
+	/**
+	 * Parse two digit positive integer.
+	 * 
+	 * @param buf
+	 * @param offset
+	 * @return
+	 */
+	public static final int parsePositiveTwoDigitInt(char[] buf, int offset) {
+	    return (buf[offset]-'0')*10 + (buf[offset+1]-'0');
+	}
+	
+	public static final int parseInt(char[] buf, int offset, int len) {
+	    int result = 0;
+	    boolean negative = false;
+
+	    int i = offset;
+	    if (len > 0 && buf[i] == '-') {
+	        negative = true;
+	        i++;
+	        len--;
+	    }
+
+	    for (int end = i + len; i < end; i++) {
+	        result = result * 10 + (buf[i] - '0');
+	    }
+
+	    return negative ? -result : result;
+	}
+
+	
 	public static String parseNmeaDate (String nmeaDate) {
 		final String dd = nmeaDate.substring(0,2);
 		final String MM = nmeaDate.substring(2,4);
