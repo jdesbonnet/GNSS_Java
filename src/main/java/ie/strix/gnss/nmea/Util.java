@@ -44,16 +44,40 @@ public class Util {
 	 * @param timeIndex
 	 * @return
 	 */
-	public static int parseNmeaTimestamp (char[] sentence, int timeIndex) {
-		int hh = parsePositiveTwoDigitInt(sentence,timeIndex);
-		int mm = parsePositiveTwoDigitInt(sentence,timeIndex+2);
-		int ss = parsePositiveTwoDigitInt(sentence,timeIndex+4);
-		int timeInDay = (hh * 3600 + mm * 60 + ss) * 1000;		
+	public final static int parseNmeaTimestamp (final char[] sentence, final int timeIndex) {
+		final int hh = parsePositiveTwoDigitInt(sentence,timeIndex);
+		final int mm = parsePositiveTwoDigitInt(sentence,timeIndex+2);
+		final int ss = parsePositiveTwoDigitInt(sentence,timeIndex+4);
+		final int timeInDay = (hh * 3600  +  mm * 60  +  ss) * 1000;		
 		return timeInDay;
 	}
 	
 	/**
-	 * Parse two digit positive integer.
+	 * Return decimal degrees given latitude or longitude in NMEA0183 format.
+	 * Example:  "00859.58729342". 
+	 * 
+	 * @param sentence
+	 * @param positionIndex
+	 * @return
+	 */
+	public final static double parseNmeaLongitude (final char[] sentence, final int lngIndex, final int lngEndIndex, int signIndex) {
+		final int degrees = parsePositiveThreeDigitInt(sentence, lngIndex);
+		final int wholeMinutes = parsePositiveTwoDigitInt(sentence, lngIndex+3);
+		final double minutesFrac = parseFractionalPart(sentence,lngIndex+6, signIndex-1);
+		
+		double minutes = degrees*60.0 + wholeMinutes + minutesFrac;
+		
+		if (sentence[signIndex] == 'W') {
+			minutes *= -1.0;
+		}
+		
+		// Final result expected in degrees
+		return minutes / 60.0;
+	}
+	
+	
+	/**
+	 * Parse two digit positive integer from char[] in a way that does not create any intermediate objects.
 	 * 
 	 * @param buf
 	 * @param offset
@@ -61,6 +85,51 @@ public class Util {
 	 */
 	public static final int parsePositiveTwoDigitInt(char[] buf, int offset) {
 	    return (buf[offset]-'0')*10 + (buf[offset+1]-'0');
+	}
+	
+	/**
+	 * Parse three digit positive integer form char[] in a way that does not create any intermediate objects.
+	 * 
+	 * @param buf
+	 * @param offset
+	 * @return
+	 */
+	public static final int parsePositiveThreeDigitInt(char[] buf, int offset) {
+	    return (buf[offset]-'0')*100 + (buf[offset+1]-'0')*10 + buf[offset+2]-'0';
+	}
+	
+	/**
+	 * Parse variable digit positive integer form char[] in a way that does not create any intermediate objects.
+	 * 
+	 * @param buf
+	 * @param offset
+	 * @return
+	 */
+	public static final int parseVarDigitInt(final char[] buf, final int startIndex, final int endIndex) {
+		int sum = 0;
+		for (int i = startIndex; i <= endIndex; i++) {
+			sum *= 10;
+			sum += buf[i] - '0';
+		}
+		return sum;
+	}
+	
+	/**
+	 * Parse the fractional part (mantissa) of a floating point from char[] in a way that does not create any intermediate objects.
+	 * 
+	 * @param buf
+	 * @param offset
+	 * @return
+	 */
+	public static final double parseFractionalPart(final char[] buf, final int startIndex, final int endIndex) {
+		int sum = 0;
+		int div = 1;
+		for (int i = startIndex; i < endIndex; i++) {
+			div *= 10;
+			sum *= 10;
+			sum += buf[i] - '0';
+		}
+		return (double)sum / (double)div;
 	}
 	
 	public static final int parseInt(char[] buf, int offset, int len) {
