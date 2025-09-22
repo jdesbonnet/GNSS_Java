@@ -56,18 +56,43 @@ public class Util {
 	 * Return decimal degrees given latitude or longitude in NMEA0183 format.
 	 * Example:  "00859.58729342". 
 	 * 
-	 * @param sentence
-	 * @param positionIndex
+	 * @param sentence The NMEA sentence in char[].
+	 * @param startIndex The position in the sentence array where the longitude starts. It is assumed the sign (E,W)
+	 * always follows directly after.
 	 * @return
 	 */
-	public final static double parseNmeaLongitude (final char[] sentence, final int lngIndex, final int lngEndIndex, int signIndex) {
-		final int degrees = parsePositiveThreeDigitInt(sentence, lngIndex);
-		final int wholeMinutes = parsePositiveTwoDigitInt(sentence, lngIndex+3);
-		final double minutesFrac = parseFractionalPart(sentence,lngIndex+6, signIndex-1);
+	public final static double parseNmeaLongitude (final char[] sentence, final int startIndex, int signIndex) {
+		final int degrees = parsePositiveThreeDigitInt(sentence, startIndex);
+		final int wholeMinutes = parsePositiveTwoDigitInt(sentence, startIndex+3);
+		final double minutesFrac = parseFractionalPart(sentence,startIndex+6, signIndex-1);
 		
 		double minutes = degrees*60.0 + wholeMinutes + minutesFrac;
 		
 		if (sentence[signIndex] == 'W') {
+			minutes *= -1.0;
+		}
+		
+		// Final result expected in degrees
+		return minutes / 60.0;
+	}
+	
+	/**
+	 * Return decimal degrees given latitude or longitude in NMEA0183 format.
+	 * Example:  "5316.89755755,N".
+	 * 
+	 * @param sentence The NMEA sentence in char[].
+	 * @param startIndex The position in the sentence array where the latitude starts. It is assumed the sign (S,N)
+	 * always follows directly after.
+	 * @return
+	 */
+	public final static double parseNmeaLatitude (final char[] sentence, final int startIndex, final int signIndex) {
+		final int degrees = parsePositiveTwoDigitInt(sentence, startIndex);
+		final int wholeMinutes = parsePositiveTwoDigitInt(sentence, startIndex+2);
+		final double minutesFrac = parseFractionalPart(sentence,startIndex+5, signIndex-1);
+		
+		double minutes = degrees*60.0 + wholeMinutes + minutesFrac;
+		
+		if (sentence[signIndex] == 'S') {
 			minutes *= -1.0;
 		}
 		
