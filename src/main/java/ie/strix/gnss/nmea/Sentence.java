@@ -12,10 +12,8 @@ import lombok.extern.slf4j.Slf4j;
 public class Sentence {
 
 	protected String sentence;
-	//private boolean valid = false;
 	private boolean checksumValid = false;
 	
-	private boolean nmea  = false;
 	private String talkerId;
 	protected String[] parts;
 	protected Constellation constellation;
@@ -26,13 +24,9 @@ public class Sentence {
 	
 	public Sentence (String sentence) throws ChecksumFailException {
 		this.sentence = sentence;
-		
-		log.info("sentence={}",sentence);
-		
+				
 		if (Util.isChecksumValid(sentence)) {
-			log.info("sentence is valid");
 			checksumValid = true;
-			nmea = true;
 			talkerId = Util.getTalkerId(sentence);
 			parts = sentence.split(",");
 			

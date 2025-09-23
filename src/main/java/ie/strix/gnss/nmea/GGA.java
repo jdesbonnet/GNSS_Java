@@ -36,9 +36,7 @@ public class GGA extends Sentence {
 	
 	@Override
 	protected void parse() {
-		
-		log.info("parse()");
-		
+				
 		String timeStr = parts[1];
 		String latStr = parts[2];
 		String latSign = parts[3];
