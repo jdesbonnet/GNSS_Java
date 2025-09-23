@@ -38,7 +38,7 @@ public class Stream {
 	private List<SignalQuality> signals = new ArrayList<>();
 	
 	
-	public void processSentence(String sentenceStr) {
+	public void processSentence(String sentenceStr) throws ChecksumFailException {
 		log.info(sentenceStr);
 		
 		if ( ! Util.isChecksumValid(sentenceStr)) {
@@ -105,7 +105,7 @@ public class Stream {
 		}
 	}
 	
-	public static void main (String[] arg) throws IOException {
+	public static void main (String[] arg) throws IOException,ChecksumFailException {
 		File nmeaFile = new File(arg[0]);
 		
 		BufferedReader br = new BufferedReader(new FileReader(nmeaFile));

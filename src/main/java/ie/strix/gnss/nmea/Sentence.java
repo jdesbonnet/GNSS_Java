@@ -12,7 +12,7 @@ import lombok.extern.slf4j.Slf4j;
 public class Sentence {
 
 	protected String sentence;
-	private boolean valid = false;
+	//private boolean valid = false;
 	private boolean checksumValid = false;
 	
 	private boolean nmea  = false;
@@ -20,7 +20,11 @@ public class Sentence {
 	protected String[] parts;
 	protected Constellation constellation;
 	
-	public Sentence (String sentence) {
+	protected void parse() {
+		
+	}
+	
+	public Sentence (String sentence) throws ChecksumFailException {
 		this.sentence = sentence;
 		
 		log.info("sentence={}",sentence);
@@ -37,8 +41,12 @@ public class Sentence {
 			parts[parts.length-1] = lastPart.substring(0,lastPart.indexOf('*'));
 			constellation = talkerIdToConstellation(talkerId);
 			
+		} else {
+			throw new ChecksumFailException(this.sentence + " fails checksum");
 		}
 		
+		
+		parse();
 	}
 	
 	//public Talker getTalker () {
@@ -49,7 +57,7 @@ public class Sentence {
 		return checksumValid;
 	}
 	
-	public static Sentence valueOf(String sentence) {
+	public static Sentence valueOf(String sentence) throws ChecksumFailException {
 		
 		if ( ! Util.isChecksumValid(sentence)) {
 			log.warn("valueOf() sentence invalid checksum: {}",sentence);

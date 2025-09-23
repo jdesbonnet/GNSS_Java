@@ -12,11 +12,15 @@ public class Util {
 	 * @return Milliseconds since midnight.
 	 */
 	public static int parseNmeaTimestamp (String nmeaTime) {
+		
+		log.info("parseNmeaTimestamp nmeaTime={}");
+		
 		int timeStrLen = nmeaTime.length();
 		Integer hh = Integer.valueOf(nmeaTime.substring(0, 2));
 		Integer mm = Integer.valueOf(nmeaTime.substring(2, 4));
 		Integer ss = Integer.valueOf(nmeaTime.substring(4, 6));
-		int timeInDay = (hh * 3600 + mm * 60 + ss) * 1000;		
+		int timeInDay = (hh * 3600 + mm * 60 + ss) * 1000;
+		
 		// Is there a sub-second part after the radix point? I've seen 1 and 2 digits
 		// after
 		// the radix ('decimal') point. Is there any GNSS receiver that outputs ms?
@@ -33,6 +37,7 @@ public class Util {
 				timeInDay += SSS;
 			}
 		}
+		
 		log.info("timeInDay=" + timeInDay);
 		return timeInDay;
 	}

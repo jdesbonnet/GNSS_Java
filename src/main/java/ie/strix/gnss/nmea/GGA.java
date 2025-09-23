@@ -29,15 +29,16 @@ public class GGA extends Sentence {
 
 	private Double accuracy;
 
-	public GGA(String sentence) {
-		super(sentence);
-		
-		if (isChecksumValid()) {
-			parse();
-		}
-	}
 
-	private void parse() {
+	public GGA (String sentence) throws ChecksumFailException {
+		super(sentence);
+	}
+	
+	@Override
+	protected void parse() {
+		
+		log.info("parse()");
+		
 		String timeStr = parts[1];
 		String latStr = parts[2];
 		String latSign = parts[3];
