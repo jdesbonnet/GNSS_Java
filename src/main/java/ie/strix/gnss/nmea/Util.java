@@ -12,11 +12,15 @@ public class Util {
 	 * @return Milliseconds since midnight.
 	 */
 	public static int parseNmeaTimestamp (String nmeaTime) {
+		
+		log.info("parseNmeaTimestamp nmeaTime={}");
+		
 		int timeStrLen = nmeaTime.length();
 		Integer hh = Integer.valueOf(nmeaTime.substring(0, 2));
 		Integer mm = Integer.valueOf(nmeaTime.substring(2, 4));
 		Integer ss = Integer.valueOf(nmeaTime.substring(4, 6));
-		int timeInDay = (hh * 3600 + mm * 60 + ss) * 1000;		
+		int timeInDay = (hh * 3600 + mm * 60 + ss) * 1000;
+		
 		// Is there a sub-second part after the radix point? I've seen 1 and 2 digits
 		// after
 		// the radix ('decimal') point. Is there any GNSS receiver that outputs ms?
@@ -33,9 +37,149 @@ public class Util {
 				timeInDay += SSS;
 			}
 		}
+		
 		log.info("timeInDay=" + timeInDay);
 		return timeInDay;
 	}
+	
+	
+	/**
+	 * Return time from midnight UTC is milliseconds.
+	 * @param sentence
+	 * @param timeIndex
+	 * @return
+	 */
+	public final static int parseNmeaTimestamp (final char[] sentence, final int timeIndex) {
+		final int hh = parsePositiveTwoDigitInt(sentence,timeIndex);
+		final int mm = parsePositiveTwoDigitInt(sentence,timeIndex+2);
+		final int ss = parsePositiveTwoDigitInt(sentence,timeIndex+4);
+		final int timeInDay = (hh * 3600  +  mm * 60  +  ss) * 1000;		
+		return timeInDay;
+	}
+	
+	/**
+	 * Return decimal degrees given latitude or longitude in NMEA0183 format.
+	 * Example:  "00859.58729342". 
+	 * 
+	 * @param sentence The NMEA sentence in char[].
+	 * @param startIndex The position in the sentence array where the longitude starts. It is assumed the sign (E,W)
+	 * always follows directly after.
+	 * @return
+	 */
+	public final static double parseNmeaLongitude (final char[] sentence, final int startIndex, int signIndex) {
+		final int degrees = parsePositiveThreeDigitInt(sentence, startIndex);
+		final int wholeMinutes = parsePositiveTwoDigitInt(sentence, startIndex+3);
+		final double minutesFrac = parseFractionalPart(sentence,startIndex+6, signIndex-1);
+		
+		double minutes = degrees*60.0 + wholeMinutes + minutesFrac;
+		
+		if (sentence[signIndex] == 'W') {
+			minutes *= -1.0;
+		}
+		
+		// Final result expected in degrees
+		return minutes / 60.0;
+	}
+	
+	/**
+	 * Return decimal degrees given latitude or longitude in NMEA0183 format.
+	 * Example:  "5316.89755755,N".
+	 * 
+	 * @param sentence The NMEA sentence in char[].
+	 * @param startIndex The position in the sentence array where the latitude starts. It is assumed the sign (S,N)
+	 * always follows directly after.
+	 * @return
+	 */
+	public final static double parseNmeaLatitude (final char[] sentence, final int startIndex, final int signIndex) {
+		final int degrees = parsePositiveTwoDigitInt(sentence, startIndex);
+		final int wholeMinutes = parsePositiveTwoDigitInt(sentence, startIndex+2);
+		final double minutesFrac = parseFractionalPart(sentence,startIndex+5, signIndex-1);
+		
+		double minutes = degrees*60.0 + wholeMinutes + minutesFrac;
+		
+		if (sentence[signIndex] == 'S') {
+			minutes *= -1.0;
+		}
+		
+		// Final result expected in degrees
+		return minutes / 60.0;
+	}
+	
+	
+	/**
+	 * Parse two digit positive integer from char[] in a way that does not create any intermediate objects.
+	 * 
+	 * @param buf
+	 * @param offset
+	 * @return
+	 */
+	public static final int parsePositiveTwoDigitInt(char[] buf, int offset) {
+	    return (buf[offset]-'0')*10 + (buf[offset+1]-'0');
+	}
+	
+	/**
+	 * Parse three digit positive integer form char[] in a way that does not create any intermediate objects.
+	 * 
+	 * @param buf
+	 * @param offset
+	 * @return
+	 */
+	public static final int parsePositiveThreeDigitInt(char[] buf, int offset) {
+	    return (buf[offset]-'0')*100 + (buf[offset+1]-'0')*10 + buf[offset+2]-'0';
+	}
+	
+	/**
+	 * Parse variable digit positive integer form char[] in a way that does not create any intermediate objects.
+	 * 
+	 * @param buf
+	 * @param offset
+	 * @return
+	 */
+	public static final int parseVarDigitInt(final char[] buf, final int startIndex, final int endIndex) {
+		int sum = 0;
+		for (int i = startIndex; i <= endIndex; i++) {
+			sum *= 10;
+			sum += buf[i] - '0';
+		}
+		return sum;
+	}
+	
+	/**
+	 * Parse the fractional part (mantissa) of a floating point from char[] in a way that does not create any intermediate objects.
+	 * 
+	 * @param buf
+	 * @param offset
+	 * @return
+	 */
+	public static final double parseFractionalPart(final char[] buf, final int startIndex, final int endIndex) {
+		int sum = 0;
+		int div = 1;
+		for (int i = startIndex; i < endIndex; i++) {
+			div *= 10;
+			sum *= 10;
+			sum += buf[i] - '0';
+		}
+		return (double)sum / (double)div;
+	}
+	
+	public static final int parseInt(char[] buf, int offset, int len) {
+	    int result = 0;
+	    boolean negative = false;
+
+	    int i = offset;
+	    if (len > 0 && buf[i] == '-') {
+	        negative = true;
+	        i++;
+	        len--;
+	    }
+
+	    for (int end = i + len; i < end; i++) {
+	        result = result * 10 + (buf[i] - '0');
+	    }
+
+	    return negative ? -result : result;
+	}
+
 	
 	public static String parseNmeaDate (String nmeaDate) {
 		final String dd = nmeaDate.substring(0,2);

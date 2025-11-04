@@ -19,12 +19,11 @@ public class RMC extends Sentence {
 	//private String date;
 	private String dateIso;
 
-	public RMC(String sentence) {
+	public RMC(String sentence) throws ChecksumFailException {
 		super(sentence);
-		parse();
 	}
 
-	private void parse() {
+	protected void parse() {
 		final String timeStr = parts[1];
 		final String statusStr = parts[2];
 		final String latStr = parts[3];
