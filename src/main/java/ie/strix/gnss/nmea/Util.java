@@ -7,6 +7,7 @@ public class Util {
 
 	/**
 	 * Return the NMEA timestamp as milliseconds since midnight.
+	 * An example of NMEA timestamp is "140312.00".
 	 * 
 	 * @param nmeaTime Time string from GGA, RMC etc.
 	 * @return Milliseconds since midnight.
@@ -33,7 +34,7 @@ public class Util {
 				// 1 digit after the radix point
 				timeInDay += SSS * 100;
 			} else if (timeStrLen == 10) {
-				// 3 digits after the radix point (never seen this)
+				// 3 digits after the radix point (I have never seen this)
 				timeInDay += SSS;
 			}
 		}

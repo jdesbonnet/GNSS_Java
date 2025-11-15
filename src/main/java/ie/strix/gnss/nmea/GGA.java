@@ -36,7 +36,6 @@ public class GGA extends Sentence {
 	
 	@Override
 	protected void parse() {
-				
 		String timeStr = parts[1];
 		String latStr = parts[2];
 		String latSign = parts[3];
@@ -48,14 +47,12 @@ public class GGA extends Sentence {
 		String mslAltStr = parts[9];
 
 		// If there is no time we have nothing, ignore
-		if (timeStr.length() == 0 || latStr.length() == 0 || lngStr.length() == 0) {
+		if (timeStr.length() == 0) {
 			return;
 		}
 		
 		this.timeInDay = Util.parseNmeaTimestamp(timeStr);
-
 		
-
 		try {
 			nSat = Integer.valueOf(nSatStr);
 		} catch (NumberFormatException e) {
