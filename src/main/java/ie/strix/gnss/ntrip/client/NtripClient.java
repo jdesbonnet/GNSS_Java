@@ -10,6 +10,7 @@ import java.util.Base64;
 import java.util.concurrent.Flow;
 import java.util.concurrent.SubmissionPublisher;
 
+import ie.strix.gnss.ntrip.NtripUri;
 //import lombok.extern.slf4j.Slf4j;
 import lombok.extern.slf4j.Slf4j;
 
@@ -22,6 +23,7 @@ public class NtripClient {
 	private Integer port;
 	private String username;
 	private String password;
+	private String mountPoint = "/NEAR-RTCM";
 	
 	private OutputStream gnssOut;
 
@@ -34,12 +36,46 @@ public class NtripClient {
 	private final SubmissionPublisher<byte[]> publisher = new SubmissionPublisher<>();
 
 	
+	/**
+	 * @deprecated Missing mountPoint
+	 * @param host
+	 * @param port
+	 * @param username
+	 * @param password
+	 */
 	public NtripClient(String host, Integer port, String username, String password) {
 		this.host = host;
 		this.port = port;
 		this.username = username;
 		this.password = password;
 	}
+	
+	public NtripClient (NtripUri ntripUri) {
+		this.host = ntripUri.getHost();
+		this.port = ntripUri.getPort();
+		this.username = ntripUri.getUsername();
+		this.password = ntripUri.getPassword();
+		this.mountPoint = ntripUri.getPassword();
+	}
+	
+	public NtripClient (String ntripUriStr) {
+		NtripUri ntripUri = NtripUri.parse(ntripUriStr);
+		this.host = ntripUri.getHost();
+		this.port = ntripUri.getPort();
+		this.username = ntripUri.getUsername();
+		this.password = ntripUri.getPassword();
+		this.mountPoint = ntripUri.getMountpoint();
+	}
+	
+	
+	public NtripClient(String host, Integer port, String mountPoint, String username, String password) {
+		this.host = host;
+		this.port = port;
+		this.username = username;
+		this.password = password;
+		this.mountPoint = mountPoint;
+	}
+	
 	
 	public void setOutputStream (OutputStream out) {
 		log.info("setting GNSS config/RTCM stream to {}",out);
@@ -71,22 +107,30 @@ public class NtripClient {
 		// for the moment.
 		int endOfHeader = 0;
 		int n = 0;
+		StringBuilder response = new StringBuilder();
 		while (endOfHeader != 0x0d0a0d0a) {
 			int c = ntripServerIn.read() & 0xff;
 			endOfHeader <<= 8;
 			endOfHeader |= c;
 			n++;
+			response.append((char)c);
 			// log.info("reading NTRIP header byte: " + (char)c + " endOfHeader=" +
 			// String.format("%08x",endOfHeader));
 		}
 		log.info("end of NTRIP response header found after reading {} bytes",n);
+		log.info("response={}",response);
+
 		
 		
-		
-		String gga = "$GNGGA,160656.50,5316.95450720,N,00858.95182605,W,1,24,0.6,28.8719,M,57.9852,M,,*56\r\n";
-		log.info("writing initial GGA");
+		//String gga = "$GNGGA,160656.50,5316.95450720,N,00858.95182605,W,1,24,0.6,28.8719,M,57.9852,M,,*56\r\n";
+		String gga = "$GPGGA,233625.20,5316.9572745,N,00858.9463966,W,2,12,1.7,33.4127,M,58.1621,M,3.2,0121*67\r\n";
+		log.info("writing initial GGA: {}",gga);
 		ntripServerOut.write(gga.getBytes());
-		
+		ntripServerOut.flush();
+
+		//
+		// Expecting a stream of RTCM messages from here on.
+		//
 		byte[] buf = new byte[2048];
 		while (true) {
 			final int nbytes = ntripServerIn.read(buf);
@@ -97,8 +141,9 @@ public class NtripClient {
 			
 			byte[] packet = new byte[nbytes];
 			System.arraycopy(buf, 0, packet, 0, nbytes);
-			int checksum = checksum(packet);
-			log.info("read packet {} bytes checksum={}",nbytes,checksum);
+			//int checksum = checksum(packet);
+			//log.info("read packet {} bytes checksum={}",nbytes,String.format("%02X", checksum));
+			log.info("read packet {} bytes",nbytes);
 
 			log.debug(byteArrayToHex(packet));
 			
@@ -133,12 +178,13 @@ public class NtripClient {
 		// Construct the header
 		String authHeader = "Basic " + encodedAuth;
 		
-		String request = "GET /NEAR-RTCM HTTP/1.1\r\n" + "Host: " + host + ":" + port + "\r\n"
+		String request = "GET " + mountPoint + " HTTP/1.1\r\n" + "Host: " + host + ":" + port + "\r\n"
 				+ "User-Agent: " + USER_AGENT + "\r\n" 
 				+ "Authorization: " + authHeader + "\r\n"
 				+ "Ntrip-Version: Ntrip/2.0\r\n" 
 				+ "Accept: */*\r\n" 
 				+ "Connection: close\r\n\r\n";
+		
 		
 		return request;
 	}
@@ -154,6 +200,7 @@ public class NtripClient {
 	
 	/**
 	 * Calculate checksum by XOR all bytes.
+	 * NB: this is not RTCM checksum.
 	 * 
 	 * @param buf
 	 * @return Checksum
