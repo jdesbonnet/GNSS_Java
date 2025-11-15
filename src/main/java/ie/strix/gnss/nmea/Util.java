@@ -13,9 +13,7 @@ public class Util {
 	 * @return Milliseconds since midnight.
 	 */
 	public static int parseNmeaTimestamp (String nmeaTime) {
-		
-		log.info("parseNmeaTimestamp nmeaTime={}");
-		
+				
 		int timeStrLen = nmeaTime.length();
 		Integer hh = Integer.valueOf(nmeaTime.substring(0, 2));
 		Integer mm = Integer.valueOf(nmeaTime.substring(2, 4));
@@ -39,7 +37,7 @@ public class Util {
 			}
 		}
 		
-		log.info("timeInDay=" + timeInDay);
+		//log.info("timeInDay=" + timeInDay);
 		return timeInDay;
 	}
 	

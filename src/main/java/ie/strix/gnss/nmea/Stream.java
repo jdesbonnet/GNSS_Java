@@ -71,7 +71,7 @@ public class Stream {
 			
 			if (this.timeInDay != prevTimeInDay) {
 				// process signals
-				log.info("timeInDay={}",timeInDay);
+				//log.info("timeInDay={}",timeInDay);
 				for (SignalQuality sq : signals) {
 					log.info("SQ=" + sq);
 					if ( sq.getSignal() == Signal.GPS_L1_CA && sq.getPrn() == PRN) {
