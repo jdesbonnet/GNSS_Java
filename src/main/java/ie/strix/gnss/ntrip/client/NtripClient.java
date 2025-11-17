@@ -6,14 +6,18 @@ import java.io.OutputStream;
 import java.net.Socket;
 import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Base64;
+import java.util.List;
 import java.util.concurrent.Flow;
 import java.util.concurrent.SubmissionPublisher;
 
 import ie.strix.gnss.ntrip.NtripUri;
-//import lombok.extern.slf4j.Slf4j;
 import lombok.extern.slf4j.Slf4j;
 
+/**
+ * Connect to NTRIP server, receive RTCM correction messages and forward to subscribers.
+ */
 @Slf4j
 public class NtripClient {
 
@@ -23,32 +27,20 @@ public class NtripClient {
 	private Integer port;
 	private String username;
 	private String password;
-	private String mountPoint = "/NEAR-RTCM";
+	private String mountPoint;
 	
 	private OutputStream gnssOut;
 
 	private InputStream ntripServerIn;
 	private OutputStream ntripServerOut;
+	private long bytesReceived = 0;
+	
+	private List<NtripClientListener> listeners = new ArrayList<>();
 	
 	/** Timestamp at which the last GGA sentence was sent to the NTRIP server */
 	private long lastGgaSent = 0;
 	
 	private final SubmissionPublisher<byte[]> publisher = new SubmissionPublisher<>();
-
-	
-	/**
-	 * @deprecated Missing mountPoint
-	 * @param host
-	 * @param port
-	 * @param username
-	 * @param password
-	 */
-	public NtripClient(String host, Integer port, String username, String password) {
-		this.host = host;
-		this.port = port;
-		this.username = username;
-		this.password = password;
-	}
 	
 	public NtripClient (NtripUri ntripUri) {
 		this.host = ntripUri.getHost();
@@ -76,6 +68,12 @@ public class NtripClient {
 		this.mountPoint = mountPoint;
 	}
 	
+	public void addListener(NtripClientListener listener) {
+		this.listeners.add(listener);
+	}
+	public void removeListener(NtripClientListener listener) {
+		this.listeners.remove(listener);
+	}
 	
 	public void setOutputStream (OutputStream out) {
 		log.info("setting GNSS config/RTCM stream to {}",out);
@@ -90,6 +88,11 @@ public class NtripClient {
 		log.info("opening TCP socket to {}:{}", host,port);
 		Socket socket = new Socket(host, port);
 		log.info("socket opened");
+		
+		// Call back
+		for (NtripClientListener listener : listeners) {
+			listener.onConnect();
+		}
 		
 		ntripServerIn = socket.getInputStream();
 		ntripServerOut = socket.getOutputStream();
@@ -119,7 +122,6 @@ public class NtripClient {
 		}
 		log.info("end of NTRIP response header found after reading {} bytes",n);
 		log.info("response={}",response);
-
 		
 		
 		//String gga = "$GNGGA,160656.50,5316.95450720,N,00858.95182605,W,1,24,0.6,28.8719,M,57.9852,M,,*56\r\n";
@@ -134,11 +136,13 @@ public class NtripClient {
 		byte[] buf = new byte[2048];
 		while (true) {
 			final int nbytes = ntripServerIn.read(buf);
+			bytesReceived += nbytes;
 			if (nbytes<0) {
 				log.info("end of stream detected");
 				break;
 			}
 			
+			// There is no guarantee that the RTCM packet will correspond to one read() call
 			byte[] packet = new byte[nbytes];
 			System.arraycopy(buf, 0, packet, 0, nbytes);
 			//int checksum = checksum(packet);
@@ -152,6 +156,15 @@ public class NtripClient {
 				log.warn("message build up s={}",s);
 			}
 			
+			for (NtripClientListener listener : listeners) {
+				listener.onRtcmReceived(bytesReceived);
+			}
+			
+		}
+		
+		// Call back
+		for (NtripClientListener listener : listeners) {
+			listener.onDisconnect();
 		}
 	}
 	
@@ -197,6 +210,9 @@ public class NtripClient {
 		publisher.subscribe(subscriber);
 	}
 	
+	public long getBytesReceived () {
+		return this.bytesReceived;
+	}
 	
 	/**
 	 * Calculate checksum by XOR all bytes.
