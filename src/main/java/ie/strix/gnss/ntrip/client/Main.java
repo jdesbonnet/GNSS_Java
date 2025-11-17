@@ -7,7 +7,6 @@ import lombok.extern.slf4j.Slf4j;
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
-import picocli.CommandLine.Parameters;
 
 @Slf4j
 @Command(name = "ntrip_client", 
@@ -16,17 +15,9 @@ version = "0.1",
 description = "Connect to NTRIP service")
 
 public class Main implements Callable<Integer> {
-
 	
-	@Option(names = {"--host"},description = "host name for NTRIP service")
-	private String ntripHost;
-	@Option(names = {"--port"},description = "port number for NTRIP service")
-	private Integer ntripPort;	
-	@Option(names = {"--username"},description = "username for NTRIP service")
-	private String ntripUsername;
-	@Option(names = {"--password"},description = "password for NTRIP service")
-	private String ntripPassword;
-	
+	@Option(names = {"--ntrip-address"},description = "address of NTRIP service: ntrip://username:password@host:port/mountpoint")
+	private String ntripAddress;
 
 	public static void main(String... args) {
 
@@ -47,7 +38,7 @@ public class Main implements Callable<Integer> {
 
 		log.info("call()");	
 	
-		NtripClient client = new NtripClient(ntripHost,ntripPort,ntripUsername,ntripPassword);
+		NtripClient client = new NtripClient(ntripAddress);
 		
 		client.connect();
 		
