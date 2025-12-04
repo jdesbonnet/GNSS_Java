@@ -59,7 +59,7 @@ public class Sentence {
 		}
 		
 		String sentenceId = sentence.substring(3,6);
-		log.info("sentenceId={}", sentenceId);
+		log.debug("sentenceId={}", sentenceId);
 		switch (sentenceId) {
 		case "GGA": return new GGA(sentence);
 		case "GSV": return new GSV(sentence);

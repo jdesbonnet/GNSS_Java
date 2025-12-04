@@ -9,6 +9,8 @@ public class GGA extends Sentence {
 
 	/** Milliseconds since midnight UTC */
 	private int timeInDay;
+	
+	private String time;
 
 	@Getter
 	private Double latitude;
@@ -36,7 +38,7 @@ public class GGA extends Sentence {
 	
 	@Override
 	protected void parse() {
-		String timeStr = parts[1];
+		this.time = parts[1];
 		String latStr = parts[2];
 		String latSign = parts[3];
 		String lngStr = parts[4];
@@ -47,11 +49,11 @@ public class GGA extends Sentence {
 		String mslAltStr = parts[9];
 
 		// If there is no time we have nothing, ignore
-		if (timeStr.length() == 0) {
+		if (this.time.length() == 0) {
 			return;
 		}
 		
-		this.timeInDay = Util.parseNmeaTimestamp(timeStr);
+		this.timeInDay = Util.parseNmeaTimestamp(this.time);
 		
 		try {
 			nSat = Integer.valueOf(nSatStr);
@@ -113,5 +115,9 @@ public class GGA extends Sentence {
 			accuracy = hdop * 5.0;
 		}
 
+	}
+	
+	public String getIsoTime () {
+		return time + "Z";
 	}
 }

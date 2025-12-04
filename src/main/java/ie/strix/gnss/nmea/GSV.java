@@ -46,7 +46,7 @@ public class GSV extends Sentence {
 			throw new IllegalArgumentException(msg);
 		}
 		
-		log.info("nSignal={}, signalId={}", nSignal, signalId);
+		log.debug("nSignal={}, signalId={}", nSignal, signalId);
 		
 		signals = new SignalQuality[nSignal];
 		for (int i = 0; i < nSignal; i++) {
