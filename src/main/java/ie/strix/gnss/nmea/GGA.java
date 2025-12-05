@@ -120,4 +120,11 @@ public class GGA extends Sentence {
 	public String getIsoTime () {
 		return time + "Z";
 	}
+	/**
+	 * hhmmss.SS 
+	 * @return
+	 */
+	public String getNmeaTime() {
+		return time;
+	}
 }

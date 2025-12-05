@@ -16,7 +16,7 @@ public class PVT {
 	private Double latitude;
 	private Double longitude;
 	private Double altitude;
-	
+	private Integer fixType = 0;
 	
 	//private String getIsoTimestamp () {
 		
@@ -29,11 +29,21 @@ public class PVT {
 		}
 		log.debug("fromGGA() isoDate={}",isoDate);
 		
+		String nmeaTime = gga.getNmeaTime();
+		String hh = nmeaTime.substring(0,2);
+		String mm = nmeaTime.substring(2,4);
+		String ss = nmeaTime.substring(4,6);
+		String SSS = nmeaTime.substring(7);
+		
 		PVT pvt = new PVT();
-		pvt.isoTimestamp = isoDate + "T" + gga.getIsoTime();
+		//pvt.isoTimestamp = isoDate + "T" + gga.getIsoTime();
+		pvt.isoTimestamp = isoDate + "T" + hh + ":" + mm + ":" + ss + "." + SSS + "Z";
+
 		pvt.latitude = gga.getLatitude();
 		pvt.longitude = gga.getLongitude();
 		pvt.altitude = gga.getAltitude();
+		pvt.fixType = gga.getFixType();
+		
 		return pvt;
 	}
 }
