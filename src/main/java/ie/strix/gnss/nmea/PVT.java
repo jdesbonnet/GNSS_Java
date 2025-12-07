@@ -1,5 +1,10 @@
 package ie.strix.gnss.nmea;
 
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.time.format.DateTimeFormatter;
+import java.util.TimeZone;
+
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 
@@ -13,6 +18,7 @@ public class PVT {
 
 	//private String isoDate;
 	private String isoTimestamp;
+	private Long timestamp;
 	private Double latitude;
 	private Double longitude;
 	private Double altitude;
@@ -21,6 +27,7 @@ public class PVT {
 	//private String getIsoTimestamp () {
 		
 	//}
+	
 	
 	public static PVT fromGGA (String isoDate, GGA gga) {
 		
@@ -37,7 +44,23 @@ public class PVT {
 		
 		PVT pvt = new PVT();
 		//pvt.isoTimestamp = isoDate + "T" + gga.getIsoTime();
-		pvt.isoTimestamp = isoDate + "T" + hh + ":" + mm + ":" + ss + "." + SSS + "Z";
+		String zsuffix;
+		if (SSS.length()==1) {
+			zsuffix = "00Z";
+		} else if (SSS.length()==2) {
+			zsuffix = "0Z";
+		} else {
+			zsuffix = "Z";
+		}
+		pvt.isoTimestamp = isoDate + "T" + hh + ":" + mm + ":" + ss + "." + SSS + zsuffix;
+		
+		SimpleDateFormat isodf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SS'Z'");
+		isodf.setTimeZone(TimeZone.getTimeZone("UTC"));
+		try {
+			pvt.timestamp = isodf.parse(pvt.isoTimestamp).getTime();
+		} catch (ParseException e) {
+			log.error("cannot parse timestamp",e);
+		}
 
 		pvt.latitude = gga.getLatitude();
 		pvt.longitude = gga.getLongitude();

@@ -2,8 +2,11 @@ package ie.strix.gnss.nmea;
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.Reader;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -12,6 +15,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.zip.GZIPInputStream;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -23,12 +27,13 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class Stream {
 
-	private Reader reader;
+	//private Reader reader;
 	private BufferedReader br;
 	private long startOfCurrentDay = 0;
 	private long timeInDay;
 	private long prevTimeInDay;
 	private String isoDate;
+	private int linesRead = 0;
 	
 	private Double latitude;
 	private Double longitude;
@@ -45,18 +50,34 @@ public class Stream {
 	}
 	
 	public Stream (Reader reader) {
-		this.reader = reader;
+		//this.reader = reader;
 		this.br = new BufferedReader(reader);
 	}
 	
-	public GGA readNextGGA () throws IOException {
-		
+	public Stream (File file) throws FileNotFoundException, IOException {
+		if (file.getName().endsWith(".gz")) {
+			Reader reader = new InputStreamReader(new GZIPInputStream(new FileInputStream(file)));
+			this.br = new BufferedReader(reader);
+		} else {
+			Reader reader = new FileReader(file);
+			this.br = new BufferedReader(reader);
+		}
+	}
+	
+	public Sentence readNextSentence () throws IOException {
 		while (true) {
 			String sentenceStr = this.br.readLine();
 			if (sentenceStr == null) {
 				throw new IOException ("end of stream");
 			}
-			Sentence sentence = processSentence(sentenceStr);
+			linesRead++;
+			return processSentence(sentenceStr);
+		}
+	}
+	
+	public GGA readNextGGA () throws IOException {
+		while (true) {
+			Sentence sentence = readNextSentence();
 			if (sentence instanceof GGA) {
 				return (GGA)sentence;
 			}
@@ -68,7 +89,7 @@ public class Stream {
 		GGA gga;
 		do {
 			gga = readNextGGA();
-		} while (isoDate == null);
+		} while (isoDate == null || gga.getLatitude() == null);
 		
 		return PVT.fromGGA(isoDate, gga);
 	}
