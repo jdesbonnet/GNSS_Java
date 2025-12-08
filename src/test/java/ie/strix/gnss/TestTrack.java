@@ -21,7 +21,19 @@ public class TestTrack {
 		PVT pvt1 = new PVT(2000, 11,11,1);
 		PVT pvt2 = new PVT(3000, 12,12,2);
 		PVT pvt3 = new PVT(4000, 13,13,3);
-
+		
+		pvt0.setHeading(0.0);
+		pvt1.setHeading(90.0);
+		pvt2.setHeading(180.0);
+		pvt3.setHeading(270.0);
+		
+		
+		pvt0.setPitch(10.0);
+		pvt1.setPitch(20.0);
+		pvt2.setPitch(30.0);
+		pvt3.setPitch(40.0);
+		
+		
 		Track track = new Track();
 		track.addPvt(pvt0);
 		track.addPvt(pvt1);
@@ -37,13 +49,17 @@ public class TestTrack {
 		assertEquals(10.5,pvt1500.getLatitude());
 		assertEquals(10.5,pvt1500.getLongitude());
 		assertEquals(0.5,pvt1500.getAltitude());
-		
+		assertEquals(45, pvt1500.getHeading());
+		assertEquals(15, pvt1500.getPitch());
+
 		PVT pvt2500 = track.interpolate(2500);
 		assertNotNull(pvt2500);
 		assertEquals(11.5,pvt2500.getLatitude());
 		assertEquals(11.5,pvt2500.getLongitude());
 		assertEquals(1.5,pvt2500.getAltitude());
-		
+		assertEquals(135, pvt2500.getHeading());
+		assertEquals(25, pvt2500.getPitch());
+
 
 	}
 }

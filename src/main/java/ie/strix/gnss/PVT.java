@@ -2,8 +2,9 @@ package ie.strix.gnss;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.time.format.DateTimeFormatter;
 import java.util.TimeZone;
+
+import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
 
 import ie.strix.gnss.nmea.GGA;
 import lombok.Data;
@@ -20,12 +21,44 @@ public class PVT {
 	//private String isoDate;
 	private String isoTimestamp;
 	private Long timestamp;
+	
+	/**
+	 * Latitude in degrees.
+	 */
 	private Double latitude;
+	
+	/**
+	 * Longitude in degrees
+	 */
 	private Double longitude;
+	
+	/**
+	 * Altitude [define] in meters above [define].
+	 */
 	private Double altitude;
+	
+	/**
+	 * GNSS fix type using NMEA 0183 GGA convention.
+	 */
 	private Integer fixType = 0;
+	
+	/**
+	 * This is the direction in the horizontal plane of the velocity vector. Not to be confused with the heading/pose of the device which 
+	 * can be different.
+	 */
 	private Double course;
+	
+	/**
+	 * The velocity (in 3D).
+	 */
 	private Double speed;
+	
+	/**
+	 * The device pose heading where 0=north. This is different to course (eg the device could be traveling north but looking east at the same time).
+	 */
+	private Double heading;
+	private Double pitch;
+	private Double roll;
 	
 	//private String getIsoTimestamp () {
 		
@@ -84,5 +117,28 @@ public class PVT {
 		pvt.fixType = gga.getFixType();
 		
 		return pvt;
+	}
+	
+	public Vector3D calcDisplacementTo (PVT pvt2) {
+		final double dlat = pvt2.getLatitude() - this.latitude;
+		final double dlng = pvt2.getLongitude() - this.longitude;
+		final double dalt = pvt2.getAltitude() - this.altitude;
+		final double de = dlng * 111320 * Math.cos(this.latitude*Math.PI/180);
+		final double dn = dlat * 111320;
+		Vector3D displacement = new Vector3D(de,dn,dalt);
+		return displacement;
+	}
+	public double calcBearingTo (PVT pvt2) {
+		final double dlat = pvt2.getLatitude() - this.latitude;
+		final double dlng = pvt2.getLongitude() - this.longitude;
+		//final double dalt = pvt2.getAltitude() - this.altitude;
+		final double de = dlng * 111320 * Math.cos(this.latitude*Math.PI/180);
+		final double dn = dlat * 111320;
+		return Math.atan2(dn, de) * 180.0 / Math.PI;
+	}
+	public double calcSpeedTo (PVT pvt2) {
+		final double d = calcDisplacementTo(pvt2).getNorm();
+		final double dt = (pvt2.getTimestamp() - this.timestamp)/1000.0;
+		return d/dt;
 	}
 }

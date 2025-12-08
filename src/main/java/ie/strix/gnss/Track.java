@@ -78,6 +78,8 @@ public class Track {
 		double lat = p1.getLatitude();
 		double lng = p1.getLongitude();
 		double alt = p1.getAltitude();
+		double hdg = p1.getHeading();
+		double pitch = p1.getPitch();
 		
 		//pvt.setLatitude (p1.getLatitude());
 		//pvt.setLongitude (p1.getLongitude());
@@ -92,10 +94,22 @@ public class Track {
 			final double dlng = p2.getLongitude() - p1.getLongitude();
 			final double dlat = p2.getLatitude() - p1.getLatitude();
 			final double dalt = p2.getAltitude() - p1.getAltitude();
+			
 			final double dt = ((double)(p2.getTimestamp() - p1.getTimestamp()))/1000.0;
 			lng += (et/dt) * dlng;
 			lat += (et/dt) * dlat;
 			alt += (et/dt) * dalt;
+			
+			// Heading is optional
+			if (p2.getHeading() != null && p1.getHeading() != null) {
+				final double dhdg = p2.getHeading() - p1.getHeading();
+				hdg += (et/dt) * dhdg;
+			}
+			if (p2.getPitch() != null && p1.getPitch() != null) {
+				final double dpitch = p2.getPitch() - p1.getPitch();
+				pitch += (et/dt) * dpitch;
+			}
+			
 		} else if (et < 0) {
 			// If between p0 and p1, interpolate between p0->p1			
 			final double dlng = p1.getLongitude() - p0.getLongitude();
@@ -106,12 +120,23 @@ public class Track {
 			lat += (et/dt) * dlat;
 			alt += (et/dt) * dalt;
 			
+			// Heading is optional
+			if (p1.getHeading() != null && p0.getHeading() != null) {
+				final double dhdg = p1.getHeading() - p0.getHeading();
+				hdg += (et/dt) * dhdg;
+			}
+			if (p1.getPitch() != null && p0.getPitch() != null) {
+				final double dpitch = p1.getPitch() - p0.getPitch();
+				pitch += (et/dt) * dpitch;
+			}
 		}
 		
 		// Set interpolated position
 		pvt.setLatitude(lat);
 		pvt.setLongitude(lng);
 		pvt.setAltitude(alt);
+		pvt.setHeading(hdg);
+		pvt.setPitch(pitch);
 		
 		// Calculate velocity direction
 		double dx = (p2.getLongitude() - p0.getLongitude())*111320*Math.cos(lat*Math.PI/180.0);
