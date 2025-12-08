@@ -119,6 +119,11 @@ public class PVT {
 		return pvt;
 	}
 	
+	/**
+	 * Calculate spatial displacement from current PVT to pvt2 in meters.
+	 * @param pvt2
+	 * @return
+	 */
 	public Vector3D calcDisplacementTo (PVT pvt2) {
 		final double dlat = pvt2.getLatitude() - this.latitude;
 		final double dlng = pvt2.getLongitude() - this.longitude;

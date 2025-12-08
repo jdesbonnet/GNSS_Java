@@ -23,13 +23,9 @@ public class Track {
 	private static final Comparator<PVT> pvtComparator = (o1, o2) -> o1.getTimestamp() > o2.getTimestamp() ? 1 : ((o1.getTimestamp() < o2.getTimestamp()) ? -1 : 0) ;
 
 	public Track () {
-		
 	}
 	
 	public Track (List<PVT> track) {
-		//pvts = track;
-		//begin = track.get(0).getTimestamp();
-		//end   = track.get(track.size()-1).getTimestamp();
 		addAll(track);
 	}
 	
@@ -41,18 +37,24 @@ public class Track {
 	 */
 	public PVT interpolate(long ts) {
 		
+		long t = -System.currentTimeMillis();
+		
+		log.info("Track interpolate() ts={}",ts);
+		
 		if ( ts < begin) {
-			//log.info("t before start of file dt=" + (begin-ts) + "ms");
-			return null;
+			log.info("t before start of file dt=" + (begin-ts) + "ms");
+			//return null;
+			return this.pvts.get(0);
 		}
 
 		if ( ts > end) {
-			//log.info("t after end of file dt=" + (end-ts) + "ms");
+			log.info("t after end of file dt=" + (end-ts) + "ms");
 			//log.warn("t=" + t + " is after any PVT data");
 			return null;
 		}
 		
-
+		log.info("ts={} is in track time frame",ts);
+		
 		PVT pvt = new PVT();
 		pvt.setTimestamp(ts);
 		
@@ -63,7 +65,11 @@ public class Track {
 		// are less than the specified key. Note that this guarantees that the return value will be >= 0 if and only if the key is found.
 		
 		int nearestIndex = Collections.binarySearch(pvts, pvt, pvtComparator);
-				
+		
+		if (nearestIndex == 0) {
+			log.info("nearestIndex = 0, not found?");
+		}
+		
 		// If not exact match get negative of insertion point
 		if (nearestIndex < 0) {
 			nearestIndex = -nearestIndex - 1;
@@ -71,9 +77,9 @@ public class Track {
 		
 		log.info("nearestIndex={}",nearestIndex);
 
-		PVT p0 = pvts.get(nearestIndex-1);
+		PVT p0 = pvts.get(nearestIndex>0?nearestIndex-1:0);
 		PVT p1 = pvts.get(nearestIndex);
-		PVT p2 = pvts.get(nearestIndex+1);
+		PVT p2 = pvts.get(nearestIndex < this.pvts.size()-1 ?  nearestIndex+1 : this.pvts.size()-1);
 		
 		double lat = p1.getLatitude();
 		double lng = p1.getLongitude();
@@ -149,6 +155,8 @@ public class Track {
 		pvt.setCourse(Math.atan2(dy, dx)*180.0/Math.PI);
 		pvt.setSpeed(Math.sqrt(dx*dx + dy*dy + dz*dz)/dt);
 		
+		t += System.currentTimeMillis();
+		log.info("time to execute interpolation: {}ms",t);
 		
 		return pvt;
 	}
@@ -170,10 +178,10 @@ public class Track {
 	 * @param pvts
 	 */
 	public void addAll (List<PVT> pvts) {
-		if (pvts.size() == 0) {
+		if (this.pvts.size() == 0) {
 			this.begin = pvts.get(0).getTimestamp();
 		}
-		pvts.addAll(pvts);
-		this.end = pvts.get(pvts.size()-1).getTimestamp();
+		this.pvts.addAll(pvts);
+		this.end = this.pvts.get(this.pvts.size()-1).getTimestamp();
 	}
 }
