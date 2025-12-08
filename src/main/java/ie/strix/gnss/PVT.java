@@ -1,10 +1,11 @@
-package ie.strix.gnss.nmea;
+package ie.strix.gnss;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.format.DateTimeFormatter;
 import java.util.TimeZone;
 
+import ie.strix.gnss.nmea.GGA;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 
@@ -23,10 +24,23 @@ public class PVT {
 	private Double longitude;
 	private Double altitude;
 	private Integer fixType = 0;
+	private Double course;
+	private Double speed;
 	
 	//private String getIsoTimestamp () {
 		
 	//}
+	
+	public PVT () {
+		
+	}
+	
+	public PVT (long timestamp, double lat, double lng, double alt) {
+		this.timestamp = timestamp;
+		this.latitude = lat;
+		this.longitude = lng;
+		this.altitude = alt;
+	}
 	
 	
 	public static PVT fromGGA (String isoDate, GGA gga) {
@@ -44,6 +58,8 @@ public class PVT {
 		
 		PVT pvt = new PVT();
 		//pvt.isoTimestamp = isoDate + "T" + gga.getIsoTime();
+		
+		// Some GNSS module do time with 0, 1, 2 (and presumably 3?) decimal places in the NMEA time.
 		String zsuffix;
 		if (SSS.length()==1) {
 			zsuffix = "00Z";

@@ -2,6 +2,9 @@ package ie.strix.gnss.nmea;
 
 import lombok.extern.slf4j.Slf4j;
 
+/**
+ * NMEA 0183 utility functions.
+ */
 @Slf4j
 public class Util {
 
