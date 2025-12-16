@@ -1,9 +1,11 @@
 package ie.strix.gnss;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.TimeZone;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -39,24 +41,27 @@ public class Track {
 		
 		long t = -System.currentTimeMillis();
 		
-		log.info("Track interpolate() ts={}",ts);
+		SimpleDateFormat isodf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
+		isodf.setTimeZone(TimeZone.getTimeZone("UTC"));
+		String isoTs = isodf.format(ts);
 		
 		if ( ts < begin) {
-			log.info("t before start of file dt=" + (begin-ts) + "ms");
+			log.info("interpolate(): t before start of file dt=" + (begin-ts) + "ms");
 			//return null;
 			return this.pvts.get(0);
 		}
 
 		if ( ts > end) {
-			log.info("t after end of file dt=" + (end-ts) + "ms");
+			log.info("interpolate(): t after end of file dt=" + (end-ts) + "ms");
 			//log.warn("t=" + t + " is after any PVT data");
 			return null;
 		}
 		
-		log.info("ts={} is in track time frame",ts);
+		log.info("interpolate(): ts={} is in track time frame",ts);
 		
 		PVT pvt = new PVT();
 		pvt.setTimestamp(ts);
+		pvt.setIsoTimestamp(isoTs);
 		
 		// Use binary search to find nearest PVT in time
 		// the index of the search key, if it is contained in the list; otherwise, (-(insertion point) - 1). 
@@ -75,10 +80,15 @@ public class Track {
 			nearestIndex = -nearestIndex - 1;
 		}
 		
-		log.info("nearestIndex={}",nearestIndex);
+		//log.info("nearestIndex={}",nearestIndex);
 
+		// The point before the nearest point
 		PVT p0 = pvts.get(nearestIndex>0?nearestIndex-1:0);
+		
+		// The nearest point
 		PVT p1 = pvts.get(nearestIndex);
+		
+		// The point after the nearest point
 		PVT p2 = pvts.get(nearestIndex < this.pvts.size()-1 ?  nearestIndex+1 : this.pvts.size()-1);
 		
 		double lat = p1.getLatitude();
@@ -87,13 +97,20 @@ public class Track {
 		double hdg = p1.getHeading();
 		double pitch = p1.getPitch();
 		
-		//pvt.setLatitude (p1.getLatitude());
-		//pvt.setLongitude (p1.getLongitude());
-		//pvt.setAltitude  (p1.getAltitude());
-		pvt.setFixType( p1.getFixType());
+
+
 		
 		// How far off in time (seconds) is the desired time to the nearest data point?
 		double et = ((double)(ts - p1.getTimestamp()))/1000.0;
+		
+		if (Math.abs(et) > 0.1) {
+			log.warn("interpolate(): time offset to nearest track point: {} at {}",et,isoTs);
+			pvt.setFixType(0); // do not use this
+		} else {
+			// Use the same fix type as nearest point
+			pvt.setFixType( p1.getFixType());
+		}
+		
 		
 		if (et>0) {
 			// If between p1 and p2, interpolate between p1->p2
@@ -121,7 +138,7 @@ public class Track {
 			final double dlng = p1.getLongitude() - p0.getLongitude();
 			final double dlat = p1.getLatitude() - p0.getLatitude();
 			final double dalt = p1.getAltitude() - p0.getAltitude();
-			final double dt = ((double)(p2.getTimestamp() - p1.getTimestamp()))/1000.0;
+			final double dt = ((double)(p1.getTimestamp() - p0.getTimestamp()))/1000.0;
 			lng += (et/dt) * dlng;
 			lat += (et/dt) * dlat;
 			alt += (et/dt) * dalt;
@@ -156,7 +173,7 @@ public class Track {
 		pvt.setSpeed(Math.sqrt(dx*dx + dy*dy + dz*dz)/dt);
 		
 		t += System.currentTimeMillis();
-		log.info("time to execute interpolation: {}ms",t);
+		//log.info("time to execute interpolation: {}ms",t);
 		
 		return pvt;
 	}

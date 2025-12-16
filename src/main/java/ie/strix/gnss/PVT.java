@@ -133,6 +133,15 @@ public class PVT {
 		Vector3D displacement = new Vector3D(de,dn,dalt);
 		return displacement;
 	}
+	public Vector3D calcAttitudeVector () {
+		final double pitchRad = this.pitch*Math.PI/180.0;
+		final double headingRad = this.heading*Math.PI/180.0;
+		double i = Math.cos(headingRad) * Math.cos(pitchRad);
+		double j = Math.sin(headingRad) * Math.cos(pitchRad);
+		double k = Math.sin(pitchRad);
+		return new Vector3D(i,j,k);
+	}
+	
 	public double calcBearingTo (PVT pvt2) {
 		final double dlat = pvt2.getLatitude() - this.latitude;
 		final double dlng = pvt2.getLongitude() - this.longitude;
