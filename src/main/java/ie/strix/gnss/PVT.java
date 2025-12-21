@@ -133,6 +133,9 @@ public class PVT {
 		Vector3D displacement = new Vector3D(de,dn,dalt);
 		return displacement;
 	}
+	public double calcDistanceTo(PVT pvt2) {
+		return calcDisplacementTo(pvt2).getNorm();
+	}
 	public Vector3D calcAttitudeVector () {
 		final double pitchRad = this.pitch*Math.PI/180.0;
 		final double headingRad = this.heading*Math.PI/180.0;
@@ -155,4 +158,5 @@ public class PVT {
 		final double dt = (pvt2.getTimestamp() - this.timestamp)/1000.0;
 		return d/dt;
 	}
+	
 }

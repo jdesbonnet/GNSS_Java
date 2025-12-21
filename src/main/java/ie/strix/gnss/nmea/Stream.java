@@ -202,4 +202,12 @@ public class Stream {
 			stream.processSentence(line);
 		}
 	}
+	
+	public void close () {
+		try {
+			br.close();
+		} catch (IOException e) {
+			log.error("error on close()",e);
+		}
+	}
 }

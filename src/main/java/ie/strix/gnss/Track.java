@@ -1,5 +1,7 @@
 package ie.strix.gnss;
 
+import java.io.File;
+import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -7,6 +9,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.TimeZone;
 
+import ie.strix.gnss.nmea.Stream;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -30,6 +33,18 @@ public class Track {
 	public Track (List<PVT> track) {
 		addAll(track);
 	}
+	
+	public Track (File gnssNmeaFile) {
+		Stream nmeaStream;
+		try {
+			nmeaStream = new Stream(gnssNmeaFile);
+			addAll(nmeaStream.readAllPVT());
+			nmeaStream.close();
+		} catch (IOException e) {
+			log.error("error creating Track",e);
+		}
+	}
+	
 	
 	/**
 	 * Given a timestamp interpolate between points in a track or return null if outside of track time range.
@@ -195,10 +210,42 @@ public class Track {
 	 * @param pvts
 	 */
 	public void addAll (List<PVT> pvts) {
+		if (pvts.size() == 0) {
+			return;
+		}
 		if (this.pvts.size() == 0) {
 			this.begin = pvts.get(0).getTimestamp();
 		}
 		this.pvts.addAll(pvts);
 		this.end = this.pvts.get(this.pvts.size()-1).getTimestamp();
 	}
+	
+	public void add (Track track) {
+		addAll(track.pvts);
+	}
+	
+	/**
+	 * Reduce the number of points in a track. 
+	 * @return
+	 */
+	public Track simplify() {
+		return simplify(10);
+	}
+	
+	/**
+	 * Reduce the number of points in a track. 
+	 * @return
+	 */
+	public Track simplify(final double sep) {
+		Track simpleTrack = new Track();
+		PVT prevPvt = this.pvts.get(0);
+		for (PVT pvt : this.pvts) {
+			if (pvt.calcDistanceTo(prevPvt) > sep) {
+				simpleTrack.addPvt(pvt);
+				prevPvt = pvt;
+			}
+		}
+		return simpleTrack;
+	}
+	
 }
