@@ -7,8 +7,7 @@ import lombok.extern.slf4j.Slf4j;
  * Parser for NMEA {@code RMC} (Recommended Minimum Specific GNSS Data) sentences.
  * <p>
  * {@code RMC} provides a compact navigation solution that includes UTC time, data validity,
- * position, speed over ground, course over ground, and date. This implementation focuses on the
- * timestamp/date and position fields commonly needed by downstream processing.
+ * position, speed over ground, course over ground, magnetic variation, and date.
  * </p>
  */
 @Slf4j
@@ -41,22 +40,45 @@ public class RMC extends Sentence {
 	 */
 	private String dateIso;
 
+	/**
+	 * Status reported in the sentence. {@code A} means valid/active data, {@code V} means void.
+	 */
+	private String status;
+
+	/**
+	 * Speed over ground in knots.
+	 */
+	private Double speedOverGroundKt;
+
+	/**
+	 * Course over ground in true degrees.
+	 */
+	private Double trackAngle;
+
+	/**
+	 * Magnetic variation in degrees. West values are represented with a negative sign.
+	 */
+	private Double magneticVariation;
+
 	public RMC(String sentence) throws ChecksumFailException {
 		super(sentence);
 	}
 
 	protected void parse() {
-		final String timeStr = parts[1];
-		final String statusStr = parts[2];
-		final String latStr = parts[3];
-		final String latSign = parts[4];
-		final String lngStr = parts[5];
-		final String lngSign = parts[6];
+		final String timeStr = getPart(1);
+		final String statusStr = getPart(2);
+		final String latStr = getPart(3);
+		final String latSign = getPart(4);
+		final String lngStr = getPart(5);
+		final String lngSign = getPart(6);
 		
-		final String speedOverGroundKtStr = parts[7];
-		final String trackAngleStr        = parts[8];
-		final String dateStr              = parts[9];
-		final String magvarStr            = parts[9];
+		final String speedOverGroundKtStr = getPart(7);
+		final String trackAngleStr        = getPart(8);
+		final String dateStr              = getPart(9);
+		final String magvarStr            = getPart(10);
+		final String magvarDirection      = getPart(11);
+
+		status = statusStr.length() > 0 ? statusStr : null;
 
 		// If there is no time we have nothing, ignore
 		if (timeStr.length() == 0 || latStr.length() == 0 || lngStr.length() == 0) {
@@ -87,6 +109,27 @@ public class RMC extends Sentence {
 			longitude = null;
 		}
 
-		dateIso = Util.parseNmeaDate(dateStr);
+		speedOverGroundKt = parseOptionalDouble(speedOverGroundKtStr);
+		trackAngle = parseOptionalDouble(trackAngleStr);
+		dateIso = dateStr.length() > 0 ? Util.parseNmeaDate(dateStr) : null;
+
+		magneticVariation = parseOptionalDouble(magvarStr);
+		if (magneticVariation != null && "W".equals(magvarDirection)) {
+			magneticVariation *= -1;
+		}
+	}
+
+	private String getPart(int index) {
+		if (index < parts.length) {
+			return parts[index];
+		}
+		return "";
+	}
+
+	private Double parseOptionalDouble(String value) {
+		if (value == null || value.length() == 0) {
+			return null;
+		}
+		return Double.valueOf(value);
 	}
 }
