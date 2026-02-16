@@ -9,6 +9,23 @@ import lombok.Getter;
  * including RMS pseudorange residual and estimated one-sigma standard deviations
  * on latitude, longitude, and altitude.
  * </p>
+ * <p>
+ * Example sentence:
+ * <br>{@code $GPGST,024603.00,1.7,0.9,1.2,45.0,0.8,1.1,1.9*5B}
+ * </p>
+ * <p>Field map:</p>
+ * <ol>
+ * <li>{@code $GPGST} - talker + sentence formatter.</li>
+ * <li>{@code 024603.00} - UTC time of associated fix.</li>
+ * <li>{@code 1.7} - RMS pseudorange residual.</li>
+ * <li>{@code 0.9} - error ellipse semi-major one-sigma (m).</li>
+ * <li>{@code 1.2} - error ellipse semi-minor one-sigma (m).</li>
+ * <li>{@code 45.0} - error ellipse orientation (degrees true).</li>
+ * <li>{@code 0.8} - latitude one-sigma error (m).</li>
+ * <li>{@code 1.1} - longitude one-sigma error (m).</li>
+ * <li>{@code 1.9} - altitude one-sigma error (m).</li>
+ * <li>{@code *5B} - checksum.</li>
+ * </ol>
  */
 @Getter
 public class GST extends Sentence {

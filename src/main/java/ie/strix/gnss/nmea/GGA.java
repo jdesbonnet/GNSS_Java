@@ -15,6 +15,29 @@ import lombok.extern.slf4j.Slf4j;
  * horizontal accuracy estimate via {@link #accuracy} based on fix type (when available) or
  * fallback HDOP heuristics.
  * </p>
+ * <p>
+ * Example sentence:
+ * <br>{@code $GPGGA,123519,4807.038,N,01131.000,E,1,08,0.9,545.4,M,46.9,M,,*47}
+ * </p>
+ * <p>Field map:</p>
+ * <ol>
+ * <li>{@code $GPGGA} - talker + sentence formatter ({@code GP}=GPS talker, {@code GGA}=fix data).</li>
+ * <li>{@code 123519} - UTC time of fix ({@code hhmmss}).</li>
+ * <li>{@code 4807.038} - latitude in {@code ddmm.mmm}.</li>
+ * <li>{@code N} - latitude hemisphere ({@code N}/{@code S}).</li>
+ * <li>{@code 01131.000} - longitude in {@code dddmm.mmm}.</li>
+ * <li>{@code E} - longitude hemisphere ({@code E}/{@code W}).</li>
+ * <li>{@code 1} - fix quality/type.</li>
+ * <li>{@code 08} - number of satellites used.</li>
+ * <li>{@code 0.9} - HDOP.</li>
+ * <li>{@code 545.4} - antenna altitude above mean sea level.</li>
+ * <li>{@code M} - altitude units (meters).</li>
+ * <li>{@code 46.9} - geoidal separation.</li>
+ * <li>{@code M} - geoidal separation units (meters).</li>
+ * <li>(empty) - age of differential correction (optional).</li>
+ * <li>(empty) - differential reference station ID (optional).</li>
+ * <li>{@code *47} - checksum.</li>
+ * </ol>
  */
 @Slf4j
 @Getter

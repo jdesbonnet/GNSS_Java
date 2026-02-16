@@ -18,6 +18,22 @@ import lombok.extern.slf4j.Slf4j;
  * </p>
  *
  * @author joe
+ * <p>
+ * Example sentence:
+ * <br>{@code $GPGSV,3,1,11,05,20,182,27,13,58,108,46,14,42,067,45,15,80,237,46*60}
+ * </p>
+ * <p>Field map:</p>
+ * <ol>
+ * <li>{@code $GPGSV} - talker + sentence formatter.</li>
+ * <li>{@code 3} - total number of GSV messages in this report cycle.</li>
+ * <li>{@code 1} - this message number within the cycle.</li>
+ * <li>{@code 11} - total satellites in view.</li>
+ * <li>{@code 05,20,182,27} - satellite block #1: PRN, elevation, azimuth, SNR.</li>
+ * <li>{@code 13,58,108,46} - satellite block #2: PRN, elevation, azimuth, SNR.</li>
+ * <li>{@code 14,42,067,45} - satellite block #3: PRN, elevation, azimuth, SNR.</li>
+ * <li>{@code 15,80,237,46} - satellite block #4: PRN, elevation, azimuth, SNR.</li>
+ * <li>{@code *60} - checksum.</li>
+ * </ol>
  */
 @Slf4j
 @Getter

@@ -9,6 +9,26 @@ import lombok.extern.slf4j.Slf4j;
  * {@code RMC} provides a compact navigation solution that includes UTC time, data validity,
  * position, speed over ground, course over ground, magnetic variation, and date.
  * </p>
+ * <p>
+ * Example sentence:
+ * <br>{@code $GPRMC,123519,A,4807.038,N,01131.000,E,022.4,084.4,230394,003.1,W*6A}
+ * </p>
+ * <p>Field map:</p>
+ * <ol>
+ * <li>{@code $GPRMC} - talker + sentence formatter.</li>
+ * <li>{@code 123519} - UTC time of fix.</li>
+ * <li>{@code A} - status ({@code A}=valid, {@code V}=void).</li>
+ * <li>{@code 4807.038} - latitude in {@code ddmm.mmm}.</li>
+ * <li>{@code N} - latitude hemisphere.</li>
+ * <li>{@code 01131.000} - longitude in {@code dddmm.mmm}.</li>
+ * <li>{@code E} - longitude hemisphere.</li>
+ * <li>{@code 022.4} - speed over ground (knots).</li>
+ * <li>{@code 084.4} - course over ground (degrees true).</li>
+ * <li>{@code 230394} - date ({@code ddmmyy}).</li>
+ * <li>{@code 003.1} - magnetic variation magnitude.</li>
+ * <li>{@code W} - magnetic variation direction ({@code E}/{@code W}).</li>
+ * <li>{@code *6A} - checksum.</li>
+ * </ol>
  */
 @Slf4j
 @Getter
