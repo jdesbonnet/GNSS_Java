@@ -26,3 +26,12 @@ Build:
 ```bash
 npm run build
 ```
+
+## GitHub Pages hosting notes
+
+- The Vite config uses `base: './'` so generated asset/script paths are
+  relative. This allows deploying `index.html` from a subdirectory instead of
+  only from a site root.
+- If you add client-side routing later, remember that GitHub Pages does not
+  provide SPA rewrites by default; deep links may require a `404.html`
+  fallback strategy.
