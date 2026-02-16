@@ -4,20 +4,60 @@ import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- *
- * Note: NMEA-0183 v4.10+ supports an extra signals/system id at the end of the sentence.
+ * Parser for NMEA {@code GSV} (Satellites in View) sentences.
+ * <p>
+ * A {@code GSV} report describes the set of satellites currently visible to the receiver,
+ * including per-satellite geometry (elevation/azimuth) and signal strength (SNR). The full
+ * report may span multiple sentences; {@link #numberOfMessages} gives the total sentence count
+ * for a report and {@link #messageNumber} gives the index of this sentence within that sequence.
+ * </p>
+ * <p>
+ * This implementation also supports NMEA-0183 v4.10+ optional trailing fields containing
+ * signal ID and system ID, which are used to resolve the reported signal/constellation when
+ * available.
+ * </p>
  *
  * @author joe
- *
  */
 @Slf4j
 @Getter
 public class GSV extends Sentence {
 
+	/**
+	 * One-based index of this sentence within the current multi-sentence GSV report.
+	 * <p>
+	 * Example: for a 3-part report, values are {@code 1}, {@code 2}, and {@code 3}.
+	 * </p>
+	 */
 	private int messageNumber;
+
+	/**
+	 * Total number of GSV sentences that make up the current report.
+	 * <p>
+	 * Receivers can only include up to four satellite entries per sentence, so this value is
+	 * typically greater than {@code 1} when many satellites are in view.
+	 * </p>
+	 */
 	private int numberOfMessages;
+
+	/**
+	 * Total number of satellites in view for the complete report.
+	 * <p>
+	 * This value is the report-wide satellite count, not just the number of satellites present in
+	 * {@link #signals} for this sentence fragment.
+	 * </p>
+	 */
 	private int nSat;
 
+	/**
+	 * Satellite/signal entries carried by this sentence fragment.
+	 * <p>
+	 * Each {@link SignalQuality} contains PRN, elevation, azimuth, and SNR for one visible
+	 * satellite. NMEA GSV sentences carry up to four entries, so this array length is in the range
+	 * {@code 0..4}. For multi-sentence reports, aggregate entries from all fragments to obtain the
+	 * complete sky view.
+	 * </p>
+	 */
 	private SignalQuality[] signals;
 
 	public GSV(String sentence) throws ChecksumFailException {
