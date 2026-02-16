@@ -28,7 +28,7 @@ public class Sentence {
 		if (Util.isChecksumValid(sentence)) {
 			checksumValid = true;
 			talkerId = Util.getTalkerId(sentence);
-			parts = sentence.split(",");
+			parts = sentence.split(",", -1);
 			
 			// Remove the checksum from the last part.
 			String lastPart = parts[parts.length-1];
