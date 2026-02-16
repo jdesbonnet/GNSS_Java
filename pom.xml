@@ -95,6 +95,26 @@
         </execution>
       </executions>
     </plugin>
+
+    <!-- Generate API docs during verify for docs publishing -->
+    <plugin>
+      <groupId>org.apache.maven.plugins</groupId>
+      <artifactId>maven-javadoc-plugin</artifactId>
+      <version>3.11.2</version>
+      <configuration>
+        <failOnError>false</failOnError>
+        <doclint>none</doclint>
+      </configuration>
+      <executions>
+        <execution>
+          <id>generate-javadocs</id>
+          <phase>verify</phase>
+          <goals>
+            <goal>javadoc</goal>
+          </goals>
+        </execution>
+      </executions>
+    </plugin>
     
     
 			<!-- test of translation of package name -->
