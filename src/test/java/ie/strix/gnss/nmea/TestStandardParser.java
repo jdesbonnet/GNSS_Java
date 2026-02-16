@@ -1,6 +1,7 @@
 package ie.strix.gnss.nmea;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -29,6 +30,35 @@ public class TestStandardParser {
 			assertEquals(27.7125, gga.getAltitude(), 1e-4);
 			assertEquals(4, gga.getFixType());
 			assertEquals(23, gga.getNSat());
+		}
+	}
+
+	@DisplayName("GSV NMEA 4.10+ supports multi-signal / multi-constellation through system+signal IDs")
+	@Test
+	public void testGSVNmea410() throws ChecksumFailException {
+		GSV gpsGsv = new GSV("$GNGSV,2,1,08,01,40,083,42,03,17,308,30,12,05,172,20,19,63,120,45,1,1*66");
+		assertEquals(2, gpsGsv.getNumberOfMessages());
+		assertEquals(1, gpsGsv.getMessageNumber());
+		assertEquals(8, gpsGsv.getNSat());
+		assertEquals(4, gpsGsv.getSignals().length);
+		assertEquals(Signal.GPS_L1_CA, gpsGsv.getSignals()[0].getSignal());
+
+		GSV glonassGsv = new GSV("$GNGSV,2,2,08,65,45,123,38,66,30,300,35,72,15,050,20,75,70,180,50,1,2*6C");
+		assertEquals(2, glonassGsv.getNumberOfMessages());
+		assertEquals(2, glonassGsv.getMessageNumber());
+		assertEquals(8, glonassGsv.getNSat());
+		assertEquals(4, glonassGsv.getSignals().length);
+		assertEquals(Signal.GLONASS_G1_CA, glonassGsv.getSignals()[0].getSignal());
+
+		GSV galileoGsv = new GSV("$GNGSV,1,1,04,11,55,100,41,19,25,210,37,24,12,310,29,31,05,045,18,7,3*68");
+		assertEquals(1, galileoGsv.getNumberOfMessages());
+		assertEquals(1, galileoGsv.getMessageNumber());
+		assertEquals(4, galileoGsv.getNSat());
+		assertEquals(4, galileoGsv.getSignals().length);
+		assertEquals(Signal.GALILEO_L1BC, galileoGsv.getSignals()[0].getSignal());
+
+		for (SignalQuality signalQuality : galileoGsv.getSignals()) {
+			assertNotNull(signalQuality.getSignal());
 		}
 	}
 	
