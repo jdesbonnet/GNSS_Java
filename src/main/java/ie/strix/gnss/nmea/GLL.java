@@ -10,6 +10,22 @@ import lombok.Getter;
  * optional mode indicator. It is a compact position-only sentence compared to
  * richer messages such as {@code GGA} or {@code RMC}.
  * </p>
+ * <p>
+ * Example sentence:
+ * <br>{@code $GPGLL,4916.45,N,12311.12,W,225444,A,A*5C}
+ * </p>
+ * <p>Field map:</p>
+ * <ol>
+ * <li>{@code $GPGLL} - talker + sentence formatter.</li>
+ * <li>{@code 4916.45} - latitude in {@code ddmm.mm}.</li>
+ * <li>{@code N} - latitude hemisphere ({@code N}/{@code S}).</li>
+ * <li>{@code 12311.12} - longitude in {@code dddmm.mm}.</li>
+ * <li>{@code W} - longitude hemisphere ({@code E}/{@code W}).</li>
+ * <li>{@code 225444} - UTC time of position fix ({@code hhmmss}).</li>
+ * <li>{@code A} - status ({@code A}=valid, {@code V}=void).</li>
+ * <li>{@code A} - mode indicator (autonomous in this example).</li>
+ * <li>{@code *5C} - checksum.</li>
+ * </ol>
  */
 @Getter
 public class GLL extends Sentence {

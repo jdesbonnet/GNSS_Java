@@ -14,6 +14,21 @@ import lombok.Getter;
  * PRN slots are present. Empty satellite slots are represented as {@code null} in
  * {@link #satellitePrns}.
  * </p>
+ * <p>
+ * Example sentence:
+ * <br>{@code $GPGSA,A,3,04,05,09,12,24,25,29,31,,,,,1.8,1.0,1.5*33}
+ * </p>
+ * <p>Field map:</p>
+ * <ol>
+ * <li>{@code $GPGSA} - talker + sentence formatter.</li>
+ * <li>{@code A} - mode ({@code M}=manual, {@code A}=automatic).</li>
+ * <li>{@code 3} - fix type ({@code 1}=none, {@code 2}=2D, {@code 3}=3D).</li>
+ * <li>{@code 04..31} - up to 12 PRNs used in solution (blank when unused).</li>
+ * <li>{@code 1.8} - PDOP.</li>
+ * <li>{@code 1.0} - HDOP.</li>
+ * <li>{@code 1.5} - VDOP.</li>
+ * <li>{@code *33} - checksum.</li>
+ * </ol>
  */
 @Getter
 public class GSA extends Sentence {
