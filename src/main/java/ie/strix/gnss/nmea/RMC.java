@@ -3,20 +3,42 @@ package ie.strix.gnss.nmea;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
+/**
+ * Parser for NMEA {@code RMC} (Recommended Minimum Specific GNSS Data) sentences.
+ * <p>
+ * {@code RMC} provides a compact navigation solution that includes UTC time, data validity,
+ * position, speed over ground, course over ground, and date. This implementation focuses on the
+ * timestamp/date and position fields commonly needed by downstream processing.
+ * </p>
+ */
 @Slf4j
 @Getter
 public class RMC extends Sentence {
 
-	/** Milliseconds since midnight UTC */
+	/**
+	 * UTC time-of-fix expressed as milliseconds since midnight.
+	 */
 	private int timeInDay;
 
-	@Getter
+	/**
+	 * Geodetic latitude in signed decimal degrees.
+	 * <p>
+	 * North is positive; South is negative.
+	 * </p>
+	 */
 	private Double latitude;
 	
-	@Getter
+	/**
+	 * Geodetic longitude in signed decimal degrees.
+	 * <p>
+	 * East is positive; West is negative.
+	 * </p>
+	 */
 	private Double longitude;
 
-	//private String date;
+	/**
+	 * Parsed NMEA date in ISO-like calendar form (for example {@code 2024-11-03}).
+	 */
 	private String dateIso;
 
 	public RMC(String sentence) throws ChecksumFailException {

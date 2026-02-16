@@ -3,32 +3,90 @@ package ie.strix.gnss.nmea;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
+/**
+ * Parser for NMEA {@code GGA} (Global Positioning System Fix Data) sentences.
+ * <p>
+ * A {@code GGA} sentence provides a position fix snapshot at a specific UTC time, including
+ * geodetic position (latitude/longitude), fix quality, number of satellites used in the solution,
+ * dilution of precision, and mean-sea-level altitude.
+ * </p>
+ * <p>
+ * This class parses and exposes commonly used fields from the sentence. It also derives a coarse
+ * horizontal accuracy estimate via {@link #accuracy} based on fix type (when available) or
+ * fallback HDOP heuristics.
+ * </p>
+ */
 @Slf4j
 @Getter
 public class GGA extends Sentence {
 
-	/** Milliseconds since midnight UTC */
+	/**
+	 * UTC time-of-fix expressed as milliseconds since midnight.
+	 */
 	private int timeInDay;
 	
+	/**
+	 * Raw NMEA UTC timestamp in {@code hhmmss.SS} format.
+	 */
 	private String time;
 
-	@Getter
+	/**
+	 * Geodetic latitude in signed decimal degrees.
+	 * <p>
+	 * North is positive; South is negative.
+	 * </p>
+	 */
 	private Double latitude;
 	
-	@Getter
+	/**
+	 * Geodetic longitude in signed decimal degrees.
+	 * <p>
+	 * East is positive; West is negative.
+	 * </p>
+	 */
 	private Double longitude;
 
+	/**
+	 * Fix quality/type code from GGA field 6.
+	 * <p>
+	 * Typical values include: {@code 0}=invalid, {@code 1}=GPS fix, {@code 2}=DGPS,
+	 * {@code 4}=RTK fixed, {@code 5}=RTK float.
+	 * </p>
+	 */
 	private Integer fixType;
 
+	/**
+	 * Number of satellites used in the navigation solution.
+	 */
 	private Integer nSat;
 
+	/**
+	 * Horizontal dilution of precision (HDOP).
+	 */
 	private Double hdop;
 
+	/**
+	 * Antenna altitude above mean sea level, in meters.
+	 */
 	private Double altitude;
 
+	/**
+	 * Age of differential corrections (DGPS/RTCM), if reported.
+	 */
 	private Integer dgnssage;
+
+	/**
+	 * Differential reference station identifier, if reported.
+	 */
 	private Integer stationId;
 
+	/**
+	 * Estimated horizontal accuracy in meters.
+	 * <p>
+	 * For selected fix types this is set to representative constants; otherwise a heuristic
+	 * {@code HDOP * 5m} estimate is used.
+	 * </p>
+	 */
 	private Double accuracy;
 
 
@@ -117,12 +175,19 @@ public class GGA extends Sentence {
 
 	}
 	
+	/**
+	 * Returns the parsed UTC time with a trailing {@code Z} timezone designator.
+	 *
+	 * @return timestamp formatted as {@code hhmmss.SSZ}
+	 */
 	public String getIsoTime () {
 		return time + "Z";
 	}
+
 	/**
-	 * hhmmss.SS 
-	 * @return
+	 * Returns the raw NMEA UTC timestamp.
+	 *
+	 * @return timestamp in {@code hhmmss.SS} format
 	 */
 	public String getNmeaTime() {
 		return time;
