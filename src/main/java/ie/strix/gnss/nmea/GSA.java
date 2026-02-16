@@ -78,7 +78,11 @@ public class GSA extends Sentence {
 		if (value == null || value.length() == 0) {
 			return null;
 		}
-		return Integer.valueOf(value);
+		try {
+			return Integer.valueOf(value);
+		} catch (NumberFormatException e) {
+			return null;
+		}
 	}
 
 	private Double parseOptionalDouble(String value) {

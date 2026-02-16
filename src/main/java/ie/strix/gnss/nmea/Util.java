@@ -16,31 +16,32 @@ public class Util {
 	 * @return Milliseconds since midnight.
 	 */
 	public static int parseNmeaTimestamp (String nmeaTime) {
-				
-		int timeStrLen = nmeaTime.length();
-		Integer hh = Integer.valueOf(nmeaTime.substring(0, 2));
-		Integer mm = Integer.valueOf(nmeaTime.substring(2, 4));
-		Integer ss = Integer.valueOf(nmeaTime.substring(4, 6));
+		final int hh = Integer.parseInt(nmeaTime.substring(0, 2));
+		final int mm = Integer.parseInt(nmeaTime.substring(2, 4));
+		final int ss = Integer.parseInt(nmeaTime.substring(4, 6));
 		int timeInDay = (hh * 3600 + mm * 60 + ss) * 1000;
-		
-		// Is there a sub-second part after the radix point? I've seen 1 and 2 digits
-		// after
-		// the radix ('decimal') point. Is there any GNSS receiver that outputs ms?
-		if (timeStrLen > 6) {
-			Integer SSS = Integer.valueOf(nmeaTime.substring(7));
-			if (timeStrLen == 9) {
-				// 2 digits after the radix point
-				timeInDay += SSS * 10;
-			} else if (timeStrLen == 8) {
-				// 1 digit after the radix point
-				timeInDay += SSS * 100;
-			} else if (timeStrLen == 10) {
-				// 3 digits after the radix point (I have never seen this)
-				timeInDay += SSS;
+
+		if (nmeaTime.length() > 6 && nmeaTime.charAt(6) == '.') {
+			int digitCount = 0;
+			int fractionMs = 0;
+			for (int i = 7; i < nmeaTime.length() && digitCount < 3; i++) {
+				final char c = nmeaTime.charAt(i);
+				if (c < '0' || c > '9') {
+					break;
+				}
+				fractionMs = fractionMs * 10 + (c - '0');
+				digitCount++;
+			}
+
+			if (digitCount == 1) {
+				timeInDay += fractionMs * 100;
+			} else if (digitCount == 2) {
+				timeInDay += fractionMs * 10;
+			} else if (digitCount == 3) {
+				timeInDay += fractionMs;
 			}
 		}
-		
-		//log.info("timeInDay=" + timeInDay);
+
 		return timeInDay;
 	}
 	
@@ -55,9 +56,47 @@ public class Util {
 		final int hh = parsePositiveTwoDigitInt(sentence,timeIndex);
 		final int mm = parsePositiveTwoDigitInt(sentence,timeIndex+2);
 		final int ss = parsePositiveTwoDigitInt(sentence,timeIndex+4);
-		final int timeInDay = (hh * 3600  +  mm * 60  +  ss) * 1000;		
+		int timeInDay = (hh * 3600  +  mm * 60  +  ss) * 1000;
+
+		final int radixIndex = timeIndex + 6;
+		if (radixIndex < sentence.length && sentence[radixIndex] == '.') {
+			int fractionMs = 0;
+			int digitCount = 0;
+			for (int i = radixIndex + 1; i < sentence.length && digitCount < 3; i++) {
+				final char c = sentence[i];
+				if (c < '0' || c > '9') {
+					break;
+				}
+				fractionMs = fractionMs * 10 + (c - '0');
+				digitCount++;
+			}
+
+			if (digitCount == 1) {
+				timeInDay += fractionMs * 100;
+			} else if (digitCount == 2) {
+				timeInDay += fractionMs * 10;
+			} else if (digitCount == 3) {
+				timeInDay += fractionMs;
+			}
+		}
+
 		return timeInDay;
 	}
+
+	/**
+	 * Format milliseconds since midnight as an ISO UTC time fragment.
+	 *
+	 * @param timeInDay Milliseconds since midnight.
+	 * @return Time string in {@code HH:mm:ss.SSSZ} format.
+	 */
+	public static String formatIsoUtcTime(final int timeInDay) {
+		final int hh = timeInDay / 3_600_000;
+		final int mm = (timeInDay % 3_600_000) / 60_000;
+		final int ss = (timeInDay % 60_000) / 1_000;
+		final int ms = timeInDay % 1_000;
+		return String.format("%02d:%02d:%02d.%03dZ", hh, mm, ss, ms);
+	}
+
 	
 	/**
 	 * Return decimal degrees given latitude or longitude in NMEA0183 format.

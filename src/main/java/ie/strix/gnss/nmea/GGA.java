@@ -178,16 +178,19 @@ public class GGA extends Sentence {
 	/**
 	 * Returns the parsed UTC time with a trailing {@code Z} timezone designator.
 	 *
-	 * @return timestamp formatted as {@code hhmmss.SSZ}
+	 * @return timestamp formatted as {@code HH:mm:ss.SSSZ}
 	 */
 	public String getIsoTime () {
-		return time + "Z";
+		if (time == null || time.isEmpty()) {
+			return null;
+		}
+		return Util.formatIsoUtcTime(timeInDay);
 	}
 
 	/**
 	 * Returns the raw NMEA UTC timestamp.
 	 *
-	 * @return timestamp in {@code hhmmss.SS} format
+	 * @return timestamp in {@code hhmmss[.S[S[S]]]} format
 	 */
 	public String getNmeaTime() {
 		return time;
