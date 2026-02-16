@@ -38,9 +38,22 @@ class CesiumAdapter {
         document.head.appendChild(link);
       });
     }
-    this.viewer = new window.Cesium.Viewer(container, { timeline: false, animation: false });
+    const Cesium = window.Cesium;
+    this.viewer = new Cesium.Viewer(container, {
+      timeline: false,
+      animation: false,
+      baseLayerPicker: false,
+      geocoder: false,
+      homeButton: false,
+      sceneModePicker: false,
+      navigationHelpButton: false,
+      terrainProvider: new Cesium.EllipsoidTerrainProvider(),
+      imageryProvider: new Cesium.OpenStreetMapImageryProvider({
+        url: 'https://tile.openstreetmap.org/'
+      })
+    });
     this.trackEntity = null;
-    this.cursorEntity = this.viewer.entities.add({ position: window.Cesium.Cartesian3.fromDegrees(0, 0), point: { pixelSize: 10, color: window.Cesium.Color.RED } });
+    this.cursorEntity = this.viewer.entities.add({ position: Cesium.Cartesian3.fromDegrees(0, 0), point: { pixelSize: 10, color: Cesium.Color.RED } });
   }
   setTrack(points) {
     if (!this.viewer || points.length < 2) return;
