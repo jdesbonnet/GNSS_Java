@@ -62,8 +62,12 @@ public class Sentence {
 		log.debug("sentenceId={}", sentenceId);
 		switch (sentenceId) {
 		case "GGA": return new GGA(sentence);
+		case "GSA": return new GSA(sentence);
+		case "GST": return new GST(sentence);
 		case "GSV": return new GSV(sentence);
+		case "GLL": return new GLL(sentence);
 		case "RMC": return new RMC(sentence);
+		case "VTG": return new VTG(sentence);
 		default: {log.error("unknown sentence {}",sentenceId); return null;}
 		}
 	}
