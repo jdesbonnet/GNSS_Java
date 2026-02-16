@@ -1,12 +1,11 @@
 package ie.strix.gnss;
 
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.TimeZone;
-
+import java.time.LocalDate;
+import java.time.ZoneOffset;
 import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
 
 import ie.strix.gnss.nmea.GGA;
+import ie.strix.gnss.nmea.Util;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 
@@ -84,32 +83,16 @@ public class PVT {
 		log.debug("fromGGA() isoDate={}",isoDate);
 		
 		String nmeaTime = gga.getNmeaTime();
-		String hh = nmeaTime.substring(0,2);
-		String mm = nmeaTime.substring(2,4);
-		String ss = nmeaTime.substring(4,6);
-		String SSS = nmeaTime.substring(7);
 		
 		PVT pvt = new PVT();
 		//pvt.isoTimestamp = isoDate + "T" + gga.getIsoTime();
 		
-		// Some GNSS module do time with 0, 1, 2 (and presumably 3?) decimal places in the NMEA time.
-		String zsuffix;
-		if (SSS.length()==1) {
-			zsuffix = "00Z";
-		} else if (SSS.length()==2) {
-			zsuffix = "0Z";
-		} else {
-			zsuffix = "Z";
-		}
-		pvt.isoTimestamp = isoDate + "T" + hh + ":" + mm + ":" + ss + "." + SSS + zsuffix;
-		
-		SimpleDateFormat isodf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SS'Z'");
-		isodf.setTimeZone(TimeZone.getTimeZone("UTC"));
-		try {
-			pvt.timestamp = isodf.parse(pvt.isoTimestamp).getTime();
-		} catch (ParseException e) {
-			log.error("cannot parse timestamp",e);
-		}
+		int timeInDayMs = Util.parseNmeaTimestamp(nmeaTime);
+		pvt.isoTimestamp = isoDate + "T" + Util.formatIsoUtcTime(timeInDayMs);
+
+		LocalDate date = LocalDate.parse(isoDate);
+		long dayStart = date.atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli();
+		pvt.timestamp = dayStart + timeInDayMs;
 
 		pvt.latitude = gga.getLatitude();
 		pvt.longitude = gga.getLongitude();
