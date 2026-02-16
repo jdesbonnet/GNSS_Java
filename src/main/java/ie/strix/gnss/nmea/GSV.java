@@ -28,7 +28,7 @@ public class GSV extends Sentence {
 	protected void parse() {
 		
 		numberOfMessages = Integer.valueOf(parts[1]);
-		nSat = Integer.valueOf(3);
+		nSat = Integer.valueOf(parts[3]);
 		
 		final int nSignal = (parts.length - 4)/4;
 		
