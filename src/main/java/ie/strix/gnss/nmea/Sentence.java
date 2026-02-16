@@ -1,5 +1,9 @@
 package ie.strix.gnss.nmea;
 
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -10,6 +14,13 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 public class Sentence {
+
+	@FunctionalInterface
+	private interface SentenceFactory {
+		Sentence create(String sentence) throws ChecksumFailException;
+	}
+
+	private static final Map<String, SentenceFactory> SENTENCE_FACTORIES = createSentenceFactories();
 
 	protected String sentence;
 	private boolean checksumValid = false;
@@ -60,16 +71,26 @@ public class Sentence {
 		
 		String sentenceId = sentence.substring(3,6);
 		log.debug("sentenceId={}", sentenceId);
-		switch (sentenceId) {
-		case "GGA": return new GGA(sentence);
-		case "GSA": return new GSA(sentence);
-		case "GST": return new GST(sentence);
-		case "GSV": return new GSV(sentence);
-		case "GLL": return new GLL(sentence);
-		case "RMC": return new RMC(sentence);
-		case "VTG": return new VTG(sentence);
-		default: {log.error("unknown sentence {}",sentenceId); return null;}
+
+		SentenceFactory factory = SENTENCE_FACTORIES.get(sentenceId);
+		if (factory == null) {
+			log.info("unknown sentence {}, using UnknownSentence", sentenceId);
+			return new UnknownSentence(sentence);
 		}
+
+		return factory.create(sentence);
+	}
+
+	private static Map<String, SentenceFactory> createSentenceFactories() {
+		Map<String, SentenceFactory> factories = new HashMap<>();
+		factories.put("GGA", GGA::new);
+		factories.put("GSA", GSA::new);
+		factories.put("GST", GST::new);
+		factories.put("GSV", GSV::new);
+		factories.put("GLL", GLL::new);
+		factories.put("RMC", RMC::new);
+		factories.put("VTG", VTG::new);
+		return Collections.unmodifiableMap(factories);
 	}
 	
 	private static Constellation talkerIdToConstellation( String talkerId) {
