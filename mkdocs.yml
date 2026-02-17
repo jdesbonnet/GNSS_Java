@@ -1,7 +1,7 @@
 site_name: GNSS Java Documentation
 site_description: Documentation for the GNSS Java project
-repo_url: https://github.com/strix-oss/GNSS_Java
-repo_name: strix-oss/GNSS_Java
+repo_url: https://github.com/jdesbonnet/GNSS_Java
+repo_name: jdesbonnet/GNSS_Java
 docs_dir: docs
 theme:
   name: material
