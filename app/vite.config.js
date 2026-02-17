@@ -6,6 +6,14 @@ export default defineConfig({
   // subdirectory (for example, GitHub Pages project sites).
   base: './',
   plugins: [svelte()],
+  build: {
+    rollupOptions: {
+      input: {
+        svelte: 'index.html',
+        vue: 'vue.html'
+      }
+    }
+  },
   worker: {
     format: 'es'
   }

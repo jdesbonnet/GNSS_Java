@@ -1,6 +1,10 @@
-# GNSS Log Explorer App (Svelte)
+# GNSS Log Explorer Webapps
 
-Serverless web app for loading and exploring NMEA logs with synchronized panels.
+This folder now contains **three main parts**:
+
+1. **Common GNSS visualization library** (`src/common/gnssVisualizationLibrary.js` + `src/core` + `src/panels`) shared by all UI variants.
+2. **Svelte implementation** (`index.html`, `src/main.js`, `src/App.svelte`).
+3. **Vue + HTML implementation** (`vue.html`, `src/vue/main.js`, `src/vue/vueApp.js`).
 
 ## Features
 
@@ -13,25 +17,24 @@ Serverless web app for loading and exploring NMEA logs with synchronized panels.
 - Export JSON/CSV
 - LocalStorage persistence of settings
 
-## Component foundation
-
-Imperative panels can share lifecycle/event/config behavior via
-`src/core/BaseComponent.js`:
-
-- `init()` / `destroy()` lifecycle with idempotent teardown
-- `listen(...)` helper for auto-cleaned event listeners
-- internal event bus (`on`/`emit`)
-- scoped element resolution (`resolveEl`)
-- config helpers (`get`, `set`, `updateConfig`)
-
-GNSS math helpers are intentionally separate in `src/core/math.js`.
-
 ## Run
 
 ```bash
 cd app
 npm install
 npm run dev
+```
+
+Open:
+
+- Svelte app: `http://localhost:5173/`
+- Vue app: `http://localhost:5173/vue.html`
+
+Optional convenience commands:
+
+```bash
+npm run dev:svelte
+npm run dev:vue
 ```
 
 Build:

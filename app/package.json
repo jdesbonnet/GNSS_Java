@@ -5,12 +5,15 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:svelte": "vite --open /",
+    "dev:vue": "vite --open /vue.html",
     "build": "vite build",
     "preview": "vite preview"
   },
   "dependencies": {
     "leaflet": "^1.9.4",
-    "svelte": "^4.2.19"
+    "svelte": "^4.2.19",
+    "vue": "^3.5.13"
   },
   "devDependencies": {
     "@sveltejs/vite-plugin-svelte": "^3.1.2",

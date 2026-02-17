@@ -1,14 +1,18 @@
 <script>
   import { onDestroy, onMount } from 'svelte';
-  import { loadSettings, saveSettings } from './core/settings.js';
-  import { PlaybackController } from './core/playbackController.js';
-  import { createNmeaParserWorker } from './core/nmeaService.js';
-  import { TimelineStore } from './core/timeline.js';
-  import { exportPositionsCSV, exportTimelineJSON } from './core/exporters.js';
-  import { MapPanel } from './panels/MapPanel.js';
-  import { SkyPlotPanel } from './panels/SkyPlotPanel.js';
-  import { SignalBarPanel } from './panels/SignalBarPanel.js';
-  import { TextLogPanel } from './panels/TextLogPanel.js';
+  import {
+    loadSettings,
+    saveSettings,
+    PlaybackController,
+    createNmeaParserWorker,
+    TimelineStore,
+    exportPositionsCSV,
+    exportTimelineJSON,
+    MapPanel,
+    SkyPlotPanel,
+    SignalBarPanel,
+    TextLogPanel
+  } from './common/gnssVisualizationLibrary.js';
 
   let settings = loadSettings();
   let parserState = { total: 0, malformed: 0, checksumFailed: 0, unsupported: 0 };
