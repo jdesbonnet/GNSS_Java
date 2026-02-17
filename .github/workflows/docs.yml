@@ -47,7 +47,7 @@ jobs:
       - name: Copy JavaDoc into published site
         run: |
           mkdir -p site/apidocs
-          cp -R target/site/apidocs/* site/apidocs/
+          cp -R target/reports/apidocs/* site/apidocs/
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
