@@ -1,6 +1,10 @@
-export class SkyPlotPanel {
+import { BaseComponent } from '../core/BaseComponent.js';
+
+export class SkyPlotPanel extends BaseComponent {
   constructor({ container }) {
-    this.container = container;
+    super({ name: 'SkyPlotPanel' });
+    this.init();
+    this.container = this.resolveEl(container);
     this.canvas = document.createElement('canvas');
     this.canvas.width = 420;
     this.canvas.height = 420;
@@ -39,6 +43,7 @@ export class SkyPlotPanel {
   }
 
   destroy() {
+    super.destroy();
     this.canvas.remove();
   }
 }
