@@ -13,6 +13,19 @@ Serverless web app for loading and exploring NMEA logs with synchronized panels.
 - Export JSON/CSV
 - LocalStorage persistence of settings
 
+## Component foundation
+
+Imperative panels can share lifecycle/event/config behavior via
+`src/core/BaseComponent.js`:
+
+- `init()` / `destroy()` lifecycle with idempotent teardown
+- `listen(...)` helper for auto-cleaned event listeners
+- internal event bus (`on`/`emit`)
+- scoped element resolution (`resolveEl`)
+- config helpers (`get`, `set`, `updateConfig`)
+
+GNSS math helpers are intentionally separate in `src/core/math.js`.
+
 ## Run
 
 ```bash
