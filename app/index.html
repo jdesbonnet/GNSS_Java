@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>GNSS Log Explorer</title>
+    <style>
+      #startup-error {
+        box-sizing: border-box;
+        max-width: 640px;
+        margin: 2rem auto;
+        padding: 1rem 1.25rem;
+        border: 1px solid #f2c5c5;
+        border-left: 0.45rem solid #c43f3f;
+        border-radius: 0.5rem;
+        background: #fff4f4;
+        color: #5f1f1f;
+        font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+        line-height: 1.45;
+      }
+
+      #startup-error[hidden] {
+        display: none;
+      }
+
+      #startup-error code {
+        display: inline-block;
+        margin-top: 0.25rem;
+        padding: 0.1rem 0.35rem;
+        border-radius: 0.25rem;
+        background: #f6e4e4;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="app"></div>
+    <div id="startup-error" hidden role="alert" aria-live="polite">
+      <strong>Unable to start GNSS Log Explorer.</strong>
+      <div id="startup-error-message">
+        The app frontend bundle could not be loaded. Please refresh the page or
+        verify that static files are being served from a production build.
+      </div>
+    </div>
+    <script>
+      const errorPanel = document.getElementById('startup-error');
+      const errorMessage = document.getElementById('startup-error-message');
+      const appRoot = document.getElementById('app');
+
+      function showStartupError(message) {
+        if (appRoot) {
+          appRoot.innerHTML = '';
+        }
+        if (message) {
+          errorMessage.innerHTML = message;
+        }
+        errorPanel.hidden = false;
+      }
+
+      import('./src/main.js').catch((error) => {
+        const detail = error && error.message ? error.message : 'Unknown startup error';
+        showStartupError(
+          `The browser could not load application modules.<br /><code>${detail}</code>`
+        );
+      });
+    </script>
+  </body>
+</html>

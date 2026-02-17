@@ -75,14 +75,21 @@ public class GSA extends Sentence {
 		mode = getPart(1);
 		fixType = parseOptionalInt(getPart(2));
 
+		int dopStart = Math.max(3, parts.length - 3);
+
 		satellitePrns = new Integer[12];
 		for (int i = 0; i < satellitePrns.length; i++) {
-			satellitePrns[i] = parseOptionalInt(getPart(3 + i));
+			int partIndex = 3 + i;
+			if (partIndex < dopStart) {
+				satellitePrns[i] = parseOptionalInt(getPart(partIndex));
+			} else {
+				satellitePrns[i] = null;
+			}
 		}
 
-		pdop = parseOptionalDouble(getPart(15));
-		hdop = parseOptionalDouble(getPart(16));
-		vdop = parseOptionalDouble(getPart(17));
+		pdop = parseOptionalDouble(getPart(dopStart));
+		hdop = parseOptionalDouble(getPart(dopStart + 1));
+		vdop = parseOptionalDouble(getPart(dopStart + 2));
 	}
 
 	private String getPart(int index) {
